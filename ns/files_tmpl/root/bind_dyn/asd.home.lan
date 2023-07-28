@@ -1,0 +1,27 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+; 5053
+;prereq nxrrset tst1.home.lan. A
+update delete asd.home.lan.
+update delete XAMPP.home.lan.
+update delete httpApache1C.home.lan.
+update delete Computer.home.lan.
+update delete 1c.home.lan.
+update delete dev1c64.home.lan.
+update delete w7.home.lan.
+update delete ANDROID-STUDIO.home.lan.
+update delete dude-server.home.lan.
+update delete dude-client.home.lan.
+update delete dude-s.home.lan.
+update delete dude-c.home.lan.
+update delete DESKTOP-G7HLL7I.home.lan
+update delete w11.home.lan
+update delete a-pfsense.home.lan
+update delete a-srv-1.home.lan
+update delete a-srv-2.home.lan
+update delete s-pfsense.home.lan
+update delete s-serv.home.lan
+update delete s-ws.home.lan
+update delete deb-java.home.lan
+send

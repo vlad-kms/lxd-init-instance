@@ -1,0 +1,4 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+

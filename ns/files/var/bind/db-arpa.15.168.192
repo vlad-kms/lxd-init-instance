@@ -1,0 +1,57 @@
+$ORIGIN .
+$TTL 300	; 5 minutes
+15.168.192.in-addr.arpa	IN SOA	ns.home.lan. admin.home.lan. (
+				10748      ; serial
+				21600      ; refresh (6 hours)
+				1800       ; retry (30 minutes)
+				1209600    ; expire (2 weeks)
+				7200       ; minimum (2 hours)
+				)
+			NS	ns.home.lan.
+$ORIGIN 15.168.192.in-addr.arpa.
+$TTL 600	; 10 minutes
+102			PTR	DVB-WSN-0003277.home.lan.
+103			PTR	MIPAD4-MiPad.home.lan.
+$TTL 480	; 8 minutes
+106			PTR	ansible.home.lan.
+			PTR	POCO-X4-Pro-5G.home.lan.
+111			PTR	DelphiXE.home.lan.
+116			PTR	POCO-F3.home.lan.
+$TTL 600	; 10 minutes
+122			PTR	ns4.home.lan.
+123			PTR	definite-quagga.home.lan.
+124			PTR	boss-fly.home.lan.
+202			PTR	root.home.lan.
+$TTL 480	; 8 minutes
+204			PTR	vovka-10-vm.home.lan.
+205			PTR	httpOpenServer.home.lan.
+206			PTR	apache1c.home.lan.
+$TTL 600	; 10 minutes
+207			PTR	phpstorm86.home.lan.
+$TTL 480	; 8 minutes
+208			PTR	ast.home.lan.
+209			PTR	emb.home.lan.
+$TTL 600	; 10 minutes
+213			PTR	phpstorm64.home.lan.
+$TTL 480	; 8 minutes
+214			PTR	dev1c.home.lan.
+$TTL 600	; 10 minutes
+216			PTR	netbeans.home.lan.
+217			PTR	java.home.lan.
+$TTL 300	; 5 minutes
+253			PTR	print.home.lan.
+			PTR	DLink-PS.home.lan.
+$TTL 600	; 10 minutes
+254			PTR	DGS-1210.home.lan.
+3			PTR	router.home.lan.
+51			PTR	docker-prod.home.lan.
+54			PTR	lxd-dev.home.lan.
+79			PTR	http-proxy.home.lan.
+80			PTR	home.lan.
+			PTR	serv-http-02.home.lan.
+95			PTR	ns2.home.lan.
+$TTL 300	; 5 minutes
+97			PTR	ns.home.lan.
+$TTL 600	; 10 minutes
+98			PTR	gitsrv.home.lan.
+99			PTR	hs-001.home.lan.

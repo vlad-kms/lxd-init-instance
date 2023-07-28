@@ -1,0 +1,134 @@
+$ORIGIN .
+$TTL 300	; 5 minutes
+home.lan		IN SOA	ns.home.lan. admin.home.lan. (
+				676        ; serial
+				21600      ; refresh (6 hours)
+				1800       ; retry (30 minutes)
+				1209600    ; expire (2 weeks)
+				7200       ; minimum (2 hours)
+				)
+			NS	ns.home.lan.
+			A	192.168.15.80
+$ORIGIN home.lan.
+$TTL 900	; 15 minutes
+21081111RG		A	192.168.16.140
+a1			A	192.168.16.139
+ace-burro		A	192.168.16.119
+$TTL 300	; 5 minutes
+alts			CNAME	serv-http-02
+androidstudio		CNAME	ast
+$TTL 900	; 15 minutes
+ang-nb			A	192.168.16.141
+$TTL 600	; 10 minutes
+ansible			A	192.168.15.128
+$TTL 480	; 8 minutes
+apache1c		A	192.168.15.206
+ast			A	192.168.15.208
+$TTL 300	; 5 minutes
+av			CNAME	hs-001
+$TTL 600	; 10 minutes
+boss-fly		A	192.168.15.124
+$TTL 900	; 15 minutes
+d-dev-1			A	192.168.16.51
+$TTL 1200	; 20 minutes
+d-dev-m			CNAME	docker-dev
+d-prod-m		CNAME	docker-prod
+$TTL 600	; 10 minutes
+definite-quagga		A	192.168.15.123
+$TTL 480	; 8 minutes
+DelphiXE		A	192.168.15.111
+dev1c			A	192.168.15.214
+$TTL 600	; 10 minutes
+DGS-1210		A	192.168.15.254
+DLink-PS		A	192.168.15.253
+$TTL 1200	; 20 minutes
+docker-dev		A	192.168.16.53
+$TTL 600	; 10 minutes
+docker-prod		A	192.168.15.51
+$TTL 300	; 5 minutes
+dr			CNAME	router
+$TTL 600	; 10 minutes
+DVB-WSN-0003277		A	192.168.15.102
+$TTL 480	; 8 minutes
+emb			A	192.168.15.209
+$TTL 600	; 10 minutes
+esxi			A	192.168.16.201
+eve-ng			A	192.168.16.30
+eve-ng-bak		A	192.168.16.29
+$TTL 300	; 5 minutes
+ftp			CNAME	root
+git			CNAME	hp
+gitlab			CNAME	hp
+$TTL 600	; 10 minutes
+gitsrv			A	192.168.15.98
+$TTL 300	; 5 minutes
+hp			CNAME	http-proxy
+$TTL 600	; 10 minutes
+hs-001			A	192.168.15.99
+http-proxy		A	192.168.15.79
+$TTL 480	; 8 minutes
+httpOpenServer		A	192.168.15.205
+$TTL 600	; 10 minutes
+hub			CNAME	d-prod-m
+$TTL 900	; 15 minutes
+iPad-Acer		A	192.168.16.190
+$TTL 600	; 10 minutes
+java			A	192.168.15.217
+$TTL 300	; 5 minutes
+jnk			CNAME	http-proxy
+$TTL 600	; 10 minutes
+jnksrv			A	192.168.16.52
+labinet			A	192.168.16.98
+lxd-dev			A	192.168.15.54
+$TTL 900	; 15 minutes
+lxd-prod		A	192.168.16.54
+$TTL 600	; 10 minutes
+MIPAD4-MiPad		A	192.168.15.129
+$TTL 900	; 15 minutes
+MiTV4-ANSM0-a75392fa8b7683f4 A	192.168.16.200
+$TTL 300	; 5 minutes
+mrovo			CNAME	serv-http-02
+$TTL 600	; 10 minutes
+netbeans		A	192.168.15.216
+$TTL 900	; 15 minutes
+netbeans-old		A	192.168.16.149
+$TTL 300	; 5 minutes
+nh			CNAME	serv-http-02
+ns			A	192.168.15.97
+$TTL 600	; 10 minutes
+ns2			A	192.168.15.95
+ns3			A	192.168.16.95
+ns4			A	192.168.15.122
+ntp			CNAME	router
+ntp2			CNAME	router2
+$TTL 300	; 5 minutes
+oc			NS	ns
+			NS	router
+$TTL 600	; 10 minutes
+pfSense			A	192.168.16.198
+phpstorm64		A	192.168.15.213
+phpstorm86		A	192.168.15.207
+$TTL 480	; 8 minutes
+POCO-F3			A	192.168.15.116
+POCO-X4-Pro-5G		A	192.168.15.106
+$TTL 300	; 5 minutes
+print			A	192.168.15.253
+ps64			CNAME	phpstorm64
+ps86			CNAME	phpstorm86
+registry		CNAME	hp
+$TTL 600	; 10 minutes
+root			A	192.168.15.202
+root16			A	192.168.16.202
+router			A	192.168.15.3
+router2			A	192.168.16.3
+$TTL 300	; 5 minutes
+serv-http-01		CNAME	av
+$TTL 600	; 10 minutes
+serv-http-02		A	192.168.15.80
+stkh			A	192.168.16.201
+$TTL 480	; 8 minutes
+vovka-10-vm		A	192.168.15.204
+$TTL 900	; 15 minutes
+win11			A	192.168.16.191
+$TTL 300	; 5 minutes
+www			CNAME	av

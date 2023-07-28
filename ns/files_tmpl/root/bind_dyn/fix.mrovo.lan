@@ -1,0 +1,12 @@
+show answer
+key hmac-sha512:mrovo-ru-key $MROVO_RU_KEY
+server $IPV4_NM
+; 5053
+;prereq nxrrset tst1.home.lan. A
+update delete dns-kms.mrovo.lan.
+update delete jabber.mrovo.lan.
+update delete zxc-wds.mrovo.lan.
+update delete pki.mrovo.lan.
+update delete kernel-kop.mrovo.lan.
+
+send

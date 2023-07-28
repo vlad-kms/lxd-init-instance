@@ -1,0 +1,19 @@
+key "mrovo-ru-key" {
+        algorithm hmac-sha512;
+        secret \"$MROVO_RU_KEY\";
+};
+
+key "key-certbot-w-mrovo-ru" {
+        algorithm hmac-sha512;
+        secret \"$KEY_CERTBOT_W_MROVO_RU\";
+};
+
+key "av-kms-ru-key" {
+        algorithm hmac-sha512;
+        secret \"$AV_KMS_RU_KEY\";
+};
+
+key "home-lan-key" {
+        algorithm hmac-md5;
+        secret \"$KEY_HOME_LAN\";
+};

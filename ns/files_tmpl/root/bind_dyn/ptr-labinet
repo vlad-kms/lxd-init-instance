@@ -1,0 +1,9 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+;zone 168.192.in-addr.arpa.
+; 5053
+;prereq nxrrset tst1.home.lan. A
+
+update add 98.16.168.192.in-addr.arpa 400 PTR labinet.home.lan.
+send

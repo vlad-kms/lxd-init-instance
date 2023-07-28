@@ -1,0 +1,9 @@
+config:
+  environment.EDITOR: mcedit
+  environment.ENV: /etc/profile
+
+profiles:
+  - default
+  - low_mem
+  - low_cpu
+  - mv15-0

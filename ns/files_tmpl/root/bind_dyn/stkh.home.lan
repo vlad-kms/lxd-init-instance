@@ -1,0 +1,11 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+; 5053
+;prereq nxrrset tst1.home.lan. A
+;update add jnksrv.home.lan. 600 A 1.1.1.106
+update delete stkh.home.lan.
+update add stkh.home.lan. 600 A 192.168.16.201
+update delete esxi.home.lan.
+update add esxi.home.lan. 600 A 192.168.16.201
+send

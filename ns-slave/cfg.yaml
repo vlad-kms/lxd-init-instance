@@ -1,0 +1,95 @@
+config:
+  environment.EDITOR: mcedit
+  environment.ENV: /etc/profile
+  
+  cloud-init.user-data: |
+    #cloud-config
+    timezone: Asia/Vladivostok
+    packages_update: true
+    packages:
+      - bind
+      - bind-tools
+      - openssh
+      - mc
+    manage_resolv_conf: true
+    resolv_conf:
+      nameservers:
+        - 127.0.0.1
+        - 192.168.15.3
+      searchdomains:
+        - home.lan
+        - klinika.lan
+        - mrovo.lan
+      domain: home.lan
+    write_files:
+      - path: /root/.ssh/authorized_keys
+        permissions: \"0600\"
+        content: |
+          ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAkwes1Wn8jrKFQI1+c43OAtq1ve6dxm+h7OctUx+v0SOn1QlybXPAB020+bHj/pVfUM9o9BVoaNUF199xosN3grpqJ33SOMU8d1nC8cG0tQP7jemjEqKzyO2Wc2mYkiimyaH3vCj+6/77M+AzFiO5QUNj20yUu9g8Fi1fSUcokhABMbIBhn8SMujZti05tdh6ILqWhUPFbdwn9LzdzREomtwzebORi48B3ROU/+D2I4zVcpRPQpHkVt89lvmgMzbozmfA1dq5KSIsg6nuwSU854nbxiDGCz+IvgQpUH2qWNdSji7sWPBGU19TD2g1BuH18ZCoK/Q4l/5xpVSynhW1XQ== rsa-key-20220217-home_lan
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH1nzbCN1MIxM9MrTpqrMf/co88+V7Xs8mluYOtpAHAI ed25519-home
+      - path: /etc/sysctl.conf
+        permissions: \"0644\"
+        content: |
+          net.ipv6.conf.all.disable_ipv6=1
+          net.ipv6.conf.default.disable_ipv6=1
+      - path: /etc/bind/named.conf
+        permissions: \"0644\"
+        owner: 'named:named'
+        defer: true
+        content: |
+          include \"/etc/bind/named.conf.options\";
+          include \"/etc/bind/named.conf.local\";
+          include \"named.conf.acl\";
+          include \"named.conf.lan-zone\";
+      - path: /etc/bind/named.conf.local
+        permissions: \"0644\"
+        owner: 'named:named'
+        defer: true
+        content: \"\"
+      - path: /etc/bind/named.conf.options
+        permissions: \"0644\"
+        owner: 'named:named'
+        defer: true
+        content: |
+          options {
+            directory \"/var/bind\";
+            dnssec-validation auto;
+            auth-nxdomain no;    # conform to RFC1035
+            listen-on-v6 { none; };
+            listen-on port 53 {
+              any;
+            };
+            allow-query { any; };
+            ${ALLOW_TRANSFER_OPTION}
+            recursion no;
+            edns-udp-size 4096;
+            max-udp-size 4096;
+            version none;
+          };
+      - path: /etc/periodic/15min/upd-arpa.sh
+        permissions: \"0755\"
+        content: |
+          #!/bin/sh
+          cd /root/bind_dyn/arpa && ./home.lan-ptr
+    runcmd:
+      - [rc-update, add, sysctl, default]
+      - [rc-service, sysctl, start]
+      - [rc-update, add, named, default]
+      - [rc-update, add, sshd, default]
+  cloud-init.network-config: |
+    #cloud-config
+    version: 2
+    ethernets:
+      eth0:
+        addresses:
+          - $IPV4
+        gateway4: $GW_DEF
+        nameservers:
+          search: [home.lan, klinika.lan, mrovo.lan]
+          addresses: [127.0.0.1, 8.8.8.8]
+profiles:
+  - default
+  - low_mem
+  - low_cpu
+  - $NET_INSTANCE
+  - autostart

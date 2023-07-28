@@ -1,0 +1,41 @@
+$ORIGIN .
+$TTL 300	; 5 minutes
+16.168.192.in-addr.arpa	IN SOA	ns.home.lan. admin.home.lan. (
+				10754      ; serial
+				21600      ; refresh (6 hours)
+				1800       ; retry (30 minutes)
+				1209600    ; expire (2 weeks)
+				7200       ; minimum (2 hours)
+				)
+			NS	ns.home.lan.
+$ORIGIN 16.168.192.in-addr.arpa.
+$TTL 900	; 15 minutes
+119			PTR	ace-burro.home.lan.
+120			PTR	ns3.home.lan.
+139			PTR	a1.home.lan.
+140			PTR	21081111RG.home.lan.
+141			PTR	ang-nb.home.lan.
+149			PTR	netbeans-old.home.lan.
+190			PTR	iPad-Acer.home.lan.
+191			PTR	win11.home.lan.
+$TTL 600	; 10 minutes
+198			PTR	pfSense.home.lan.
+$TTL 900	; 15 minutes
+200			PTR	MiTV4-ANSM0-a75392fa8b7683f4.home.lan.
+$TTL 600	; 10 minutes
+201			PTR	esxi.home.lan.
+			PTR	stkh.home.lan.
+202			PTR	root16.home.lan.
+29			PTR	eve-ng-bak.home.lan.
+3			PTR	router2.home.lan.
+30			PTR	eve-ng.home.lan.
+$TTL 900	; 15 minutes
+51			PTR	d-dev-1.home.lan.
+$TTL 600	; 10 minutes
+52			PTR	jnksrv.home.lan.
+$TTL 1200	; 20 minutes
+53			PTR	docker-dev.home.lan.
+$TTL 900	; 15 minutes
+54			PTR	lxd-prod.home.lan.
+$TTL 600	; 10 minutes
+98			PTR	labinet.home.lan.

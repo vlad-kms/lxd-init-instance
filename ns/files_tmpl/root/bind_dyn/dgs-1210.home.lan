@@ -1,0 +1,8 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+; 5053
+;prereq nxrrset tst1.home.lan. A
+update add dgs-1210.home.lan. 600 A 192.168.15.254
+;update delete kube.home.lan.
+send

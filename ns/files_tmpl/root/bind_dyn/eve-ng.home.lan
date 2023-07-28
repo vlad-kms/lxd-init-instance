@@ -1,0 +1,15 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+; 5053
+;prereq nxrrset tst1.home.lan. A
+;update add jnksrv.home.lan. 600 A 1.1.1.106
+update delete eve-ng.home.lan.
+update delete eve-ng-old.home.lan.
+update add eve-ng.home.lan. 600 A 192.168.16.30
+update add eve-ng-bak.home.lan. 600 A 192.168.16.29
+send
+update delete 193.16.168.192.in-addr.arpa
+update add 30.16.168.192.in-addr.arpa 600 PTR eve-ng.home.lan.
+update add 29.16.168.192.in-addr.arpa 600 PTR eve-ng-bak.home.lan.
+send

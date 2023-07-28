@@ -1,0 +1,86 @@
+logging {
+    channel \"debugfull\" {
+        file \"/var/bind/log/debugfull.log\" versions 10 size 20m;
+        severity debug 11;
+        print-category yes;
+        print-severity yes;
+        print-time yes;
+    };
+    channel \"query\" {
+        file \"/var/bind/log/query.log\" versions 10 size 20m;
+        severity info;
+        print-category yes;
+        print-severity yes;
+        print-time yes;
+    };
+    channel dnssec_log {
+        file \"log/dnssec.log\" size 20m;
+        print-time yes;
+        print-category yes;
+        print-severity yes;
+        severity debug 3;
+    };
+    category dnssec {
+        dnssec_log;
+    };
+    /**/
+    category default {
+        \"debugfull\";
+    };
+    /**/
+    category queries {
+        \"query\";
+    };
+};
+
+// область видимости для внутренних клиентов
+view \"internal-view\" {
+  // клиент - соответствует списку доступа
+  match-clients { \"lan\"; };
+  #include \"keys/key-file1\";
+
+  // зоны видимы только для внутренних клиентов
+  zone \"home.lan\" in {
+    type slave;
+    file \"db.avv.lan.slave\";
+    masters { $IPV4_MASTER; };
+//        update-policy {
+//            grant home-lan-key wildcard *.home.lan. ANY;
+//        };	
+  };
+
+  zone \"oc.home.lan\" in {
+    type slave;
+	file \"db.oc.home.lan.slave\";
+    masters { $IPV4_MASTER; };
+  };
+
+  zone \"mrovo.lan\" in {
+	type slave;
+	file \"db.mrovo.lan.slave\";
+    masters { $IPV4_MASTER; };
+  };
+
+  zone \"16.168.192.in-addr.arpa\" {
+    type slave;
+    file \"db-arpa.16.168.192.slave\";
+    masters { $IPV4_MASTER; };
+#    update-policy {
+#      grant home-lan-key wildcard *.16.168.192.in-addr.arpa. ANY;
+#    };	
+  };
+
+  zone \"15.168.192.in-addr.arpa\" {
+    type slave;
+    file \"db-arpa.15.168.192.slave\";
+    masters { $IPV4_MASTER; };
+#    update-policy {
+#      grant home-lan-key wildcard *.15.168.192.in-addr.arpa. ANY;
+#    };	
+  };
+
+  recursion no;
+  //allow-transfer {\"lan\"; \"avv\"; };
+  //${ALLOW_TRANSFER_VIEW_INT}
+  allow-transfer { any; };
+};

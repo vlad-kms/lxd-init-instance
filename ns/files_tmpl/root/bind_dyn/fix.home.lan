@@ -1,0 +1,50 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+; 5053
+;prereq nxrrset tst1.home.lan. A
+update delete home.home.lan.
+update delete WIN-1FMNVQTHKV7.home.lan.
+update delete debian-11-min.home.lan.
+update delete User-PC.home.lan.
+update delete win10-16.home.lan.
+update delete WIN-G50F8FTAO1C.home.lan.
+update delete debian-11-min.home.lan.
+update delete hadoop-1.home.lan.
+update delete lxc-vmw.home.lan.
+update delete lxc-deb.home.lan.
+update delete srv-cert-root.home.lan.
+update delete stkh1.home.lan.
+update delete tst1.home.lan.
+update delete MiTV4-ANSM0-a75392fa8b7683f4.home.lan.
+update delete DVB-WSN-0003277.home.lan.
+update delete peaceful-bedbug.home.lan.
+update delete phpstorm64-old-vw.home.lan.
+update delete phpstorm64-old.home.lan.
+update delete DESKTOP-5AV10C5.home.lan.
+update delete WIN-PKT429QB3M9.home.lan.
+update delete docker.home.lan.
+update delete kube.home.lan.
+update delete tst2.home.lan.
+update delete ns2.home.lan.
+update delete dns1.home.lan.
+update delete dns.home.lan.
+
+update delete WIN-EJ71UJ3KB4B.home.lan.
+update delete WIN-G7NO5MM079H.home.lan.
+update delete WIN-LT8P537L97Q.home.lan.
+update delete WIN-PKT429QB3M9.home.lan.
+
+update delete docker-dev-1.home.lan.
+update delete d-t1.home.lan.
+update delete srv-docker.home.lan.
+
+update delete a01.home.lan.
+update delete a02.home.lan.
+update delete a03.home.lan.
+update delete d01.home.lan.
+update delete dev-java.home.lan
+
+
+
+send

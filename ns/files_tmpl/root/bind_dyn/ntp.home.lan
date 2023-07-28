@@ -1,0 +1,7 @@
+show answer
+key hmac-md5:home-lan-key $KEY_HOME_LAN
+server $IPV4_NM
+update delete ntp.home.lan.
+update add ntp.home.lan. 600 CNAME nsr.home.lan.
+update add ntp2.home.lan. 600 CNAME nsr2.home.lan.
+send

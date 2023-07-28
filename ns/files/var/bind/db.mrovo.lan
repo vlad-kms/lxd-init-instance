@@ -1,0 +1,43 @@
+$ORIGIN .
+$TTL 300	; 5 minutes
+mrovo.lan		IN SOA	ns.home.lan. admin.home.lan. (
+				6          ; serial
+				21600      ; refresh (6 hours)
+				1800       ; retry (30 minutes)
+				1209600    ; expire (2 weeks)
+				7200       ; minimum (2 hours)
+				)
+			NS	ns.mrovo.lan.
+			NS	ns2.mrovo.lan.
+			A	192.168.1.4
+$ORIGIN mrovo.lan.
+alts			CNAME	devhttp
+alts3			CNAME	devhttp
+alts4			CNAME	devhttp
+ansible			A	192.168.1.40
+buch-kazna		A	192.168.1.236
+cc			CNAME	devhttp
+dev-http		CNAME	devhttp
+devhttp			A	192.168.1.34
+etks			A	192.168.1.54
+hv-serv-01		A	192.168.1.19
+inet			A	192.168.1.58
+it-avv			A	192.168.1.6
+it-avv-02		A	192.168.1.43
+kms			A	192.168.1.33
+kms-dev2		CNAME	devhttp
+m-router		A	192.168.1.254
+ns			A	192.168.1.58
+ns2			A	192.168.1.4
+proxy-http		A	192.168.1.30
+repo			CNAME	ansible
+rg-dhcp-02		A	192.168.1.50
+vault			A	192.168.1.8
+videovam		CNAME	vv
+vv			A	192.168.1.32
+zxc			A	192.168.1.4
+zxc-1c			A	192.168.1.7
+zxc-b			A	192.168.1.9
+zxc-ca			A	192.168.1.14
+zxc-test-01		A	192.168.1.41
+zxc-vms			A	192.168.1.48
