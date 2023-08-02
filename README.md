@@ -23,5 +23,3 @@ init-container.sh [-a containername] [-c configdir]
 
 ### Примеры:
 init-container.sh
-qwe
-123

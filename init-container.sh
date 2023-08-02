@@ -49,7 +49,7 @@ for i; do
         '-a' | '--alias')       CONTAINER_NAME=${2};    shift 2 ;;
         '-c' | '--config-dir')  CONFIG_DIR_NAME=${2};   shift 2 ;;
         '-d' | '--debug')       DEBUG=1;                shift   ;;
-        '-e' | '--env')         array_env+=( $2 );        shift 2 ;;
+        '-e' | '--env')         array_env+=( $2 );      shift 2 ;;
         '-h' | '--help')        help; exit 0;;
         '-i' | '--image')       arg_image_name=${2};    shift 2 ;;
         '-t' | '--timeout')     TIMEOUT=${2};           shift 2 ;;
@@ -317,7 +317,8 @@ if [[ $ret -ne 0 ]]; then
 fi
 
 ### проверить что cloud-init завершил работу (статус == done)
-lxc exec ${CONTAINER_NAME} -- cloud-init status --wait
+#lxc exec ${CONTAINER_NAME} -- cloud-init status --wait
+lxc exec ${CONTAINER_NAME} -- sh -c "[[ -x /usr/bin/cloud-init ]] && cloud-init status --wait"
 # ловушка после старта инстанса и завершенияработы cloud-init
 if [[ -n ${hook_afterstart} ]]; then
   debug "=== Ловушка после запуска инстанс: $hook_afterstart"
@@ -336,3 +337,5 @@ if [[ -n ${script_start} ]]; then
 fi
 
 [ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
+
+echo "Container alias: ${CONTAINER_NAME}"
