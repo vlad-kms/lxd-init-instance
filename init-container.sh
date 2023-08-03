@@ -316,10 +316,10 @@ if [[ $ret -ne 0 ]]; then
   exit $ret
 fi
 
-### проверить что cloud-init завершил работу (статус == done)
-#lxc exec ${CONTAINER_NAME} -- cloud-init status --wait
+### Если существует cloud-init, то ожидать пока cloud-init завершит работу (статус == done)
 lxc exec ${CONTAINER_NAME} -- sh -c "[[ -x /usr/bin/cloud-init ]] && cloud-init status --wait"
-# ловушка после старта инстанса и завершенияработы cloud-init
+
+### ловушка после старта инстанса и завершенияработы cloud-init
 if [[ -n ${hook_afterstart} ]]; then
   debug "=== Ловушка после запуска инстанс: $hook_afterstart"
   source "${hook_afterstart}"
@@ -330,12 +330,15 @@ if [[ $ret -ne 0 ]]; then
   exit $ret
 fi
 
+### скрипт после запуска инстанса, выполняемый внутри контейнера
 if [[ -n ${script_start} ]]; then
   debug "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
-  sleep 5
   lxc exec $CONTAINER_NAME -- sh -c "source ${dst}"
 fi
 
+### если требуется перезапуск, то выполнить его
 [ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
 
+
 echo "Container alias: ${CONTAINER_NAME}"
+return ${CONTAINER_NAME}
