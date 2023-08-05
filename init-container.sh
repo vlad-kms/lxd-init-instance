@@ -341,4 +341,4 @@ fi
 
 
 echo "Container alias: ${CONTAINER_NAME}"
-return ${CONTAINER_NAME}
+#return ${CONTAINER_NAME}
