@@ -5,6 +5,7 @@ $cmd chown -R named:named /var/bind
 $cmd chmod -R 0600 /var/bind/keys
 $cmd chmod 0700 /var/bind/keys
 #$cmd chmod +x /run/start/script.sh
+$cmd chmod +x /root/bind_dyn/arpa/home.lan-ptr
 
 $cmd sh -c "echo \"Match Address 192.168.15.0/24,192.168.16.0/24\" >> /etc/ssh/sshd_config"
 $cmd sh -c "echo \"    PermitRootLogin yes\" >>  /etc/ssh/sshd_config"
