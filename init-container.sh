@@ -75,9 +75,10 @@ TIMEOUT=${TIMEOUT:=60}
 
 ### каталог с конфигурацией == каталогу по-умолчанию
 dir_cfg=${DEF_GENERAL_CONFIG_DIR}
-### если определен --alias и существует такой каталог в каталоге запуска,
-### то каталог с конфигурацией == этому каталогу
-([[ -n "${CONTAINER_NAME}" ]] && [[ -d ${CONTAINER_NAME} ]]) && dir_cfg=${CONTAINER_NAME}
+### если определен --alias 
+[[ -n "${CONTAINER_NAME}" ]] && dir_cfg=${CONTAINER_NAME}
+### убрать из имени каталога имя сервера, если имя контейнера было как server:container
+[[ "${dir_cfg}" =~ ":" ]] && dir_cfg=$(echo ${dir_cfg} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
 ### если определен --config-dir, то каталог с конфигурацией == этому каталогу
 [[ -n "${CONFIG_DIR_NAME}" ]] && dir_cfg=${CONFIG_DIR_NAME}
 ### после проверки $dir_cfg - каталог, где надо брать конфигурацию инстанса
@@ -177,8 +178,6 @@ done
 debug "NET_INSTANCE:----- ${NET_INSTANCE}"
 debug "--------------------------------- argumentes"
 
-#exit
-
 #test_cloud_init_done
 #echo "test_cloud_init_done: $?"
 #status_cloud_init_tm $TIMEOUT
@@ -186,6 +185,8 @@ debug "--------------------------------- argumentes"
 
 ### рендеринг $config_file
 template_render "$config_file" > "$config_file_render"
+
+#exit
 
 ### если здесь анонимный инстанс, то запуск через lxc launch.
 ### Сразу завершение скрипта, пропуская все остальные шаги
@@ -317,9 +318,9 @@ if [[ $ret -ne 0 ]]; then
 fi
 
 ### Если существует cloud-init, то ожидать пока cloud-init завершит работу (статус == done)
-lxc exec ${CONTAINER_NAME} -- sh -c "[[ -x /usr/bin/cloud-init ]] && cloud-init status --wait"
+lxc exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
 
-### ловушка после старта инстанса и завершенияработы cloud-init
+### ловушка после старта инстанса и завершения работы cloud-init
 if [[ -n ${hook_afterstart} ]]; then
   debug "=== Ловушка после запуска инстанс: $hook_afterstart"
   source "${hook_afterstart}"
@@ -333,7 +334,7 @@ fi
 ### скрипт после запуска инстанса, выполняемый внутри контейнера
 if [[ -n ${script_start} ]]; then
   debug "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
-  lxc exec $CONTAINER_NAME -- sh -c "source ${dst}"
+  lxc exec $CONTAINER_NAME -- sh -c ". ${dst}"
 fi
 
 ### если требуется перезапуск, то выполнить его
