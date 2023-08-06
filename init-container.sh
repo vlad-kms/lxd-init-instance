@@ -340,4 +340,3 @@ fi
 [ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
 
 echo "Container alias: ${CONTAINER_NAME}"
-#return ${CONTAINER_NAME}
