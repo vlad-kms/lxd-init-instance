@@ -1,3 +1,0 @@
-#dsfdsfps
-Get-Process 
-
