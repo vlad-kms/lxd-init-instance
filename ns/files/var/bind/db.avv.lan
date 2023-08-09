@@ -1,7 +1,7 @@
 $ORIGIN .
 $TTL 300	; 5 minutes
 home.lan		IN SOA	ns.home.lan. admin.home.lan. (
-				676        ; serial
+				734        ; serial
 				21600      ; refresh (6 hours)
 				1800       ; retry (30 minutes)
 				1209600    ; expire (2 weeks)
@@ -12,15 +12,13 @@ home.lan		IN SOA	ns.home.lan. admin.home.lan. (
 $ORIGIN home.lan.
 $TTL 900	; 15 minutes
 21081111RG		A	192.168.16.140
-a1			A	192.168.16.139
-ace-burro		A	192.168.16.119
 $TTL 300	; 5 minutes
 alts			CNAME	serv-http-02
 androidstudio		CNAME	ast
 $TTL 900	; 15 minutes
 ang-nb			A	192.168.16.141
-$TTL 600	; 10 minutes
-ansible			A	192.168.15.128
+ans1			A	192.168.16.184
+ansible			A	192.168.16.175
 $TTL 480	; 8 minutes
 apache1c		A	192.168.15.206
 ast			A	192.168.15.208
@@ -28,13 +26,12 @@ $TTL 300	; 5 minutes
 av			CNAME	hs-001
 $TTL 600	; 10 minutes
 boss-fly		A	192.168.15.124
+calm-buffalo		A	192.168.15.134
 $TTL 900	; 15 minutes
 d-dev-1			A	192.168.16.51
 $TTL 1200	; 20 minutes
 d-dev-m			CNAME	docker-dev
 d-prod-m		CNAME	docker-prod
-$TTL 600	; 10 minutes
-definite-quagga		A	192.168.15.123
 $TTL 480	; 8 minutes
 DelphiXE		A	192.168.15.111
 dev1c			A	192.168.15.214
@@ -48,7 +45,7 @@ docker-prod		A	192.168.15.51
 $TTL 300	; 5 minutes
 dr			CNAME	router
 $TTL 600	; 10 minutes
-DVB-WSN-0003277		A	192.168.15.102
+DVB-WSN-0003277		A	192.168.15.136
 $TTL 480	; 8 minutes
 emb			A	192.168.15.209
 $TTL 600	; 10 minutes

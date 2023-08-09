@@ -7,3 +7,5 @@ ERR_RENDER_TEMPLATE_NOT_CATALOG=103;    # Место для складывани
 ERR_FILE_CONFIG_NOT=104;                # Ошибка открытия файла конфигурации контейнера или он не существует
 ERR_IMAGE_NOT=110;                      # Ошибка передачи имени образа Linux
 ERR_CREATE_CONTAINER=120;               # Ошибка при создании контейнера
+
+lxc_cmd="lxc"

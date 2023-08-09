@@ -31,8 +31,8 @@ confgi_yaml_render() {
 
 restart_instance() {
   debug "=== restarting instance"
-  lxc stop $CONTAINER_NAME
-  lxc start $CONTAINER_NAME
+  ${lxc_cmd} stop $CONTAINER_NAME
+  ${lxc_cmd} start $CONTAINER_NAME
 }
 
 add2array_env(){
@@ -46,9 +46,9 @@ create_container() {
     exit 110
   fi
   if [[ -z $2 ]]; then
-    lxc init ${1}        | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+    ${lxc_cmd} init ${1}        | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   else
-    lxc init ${1} < ${2} | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+    ${lxc_cmd} init ${1} < ${2} | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   fi
 }
 
