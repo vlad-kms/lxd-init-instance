@@ -39,7 +39,6 @@ add2array_env(){
   echo $array_env
 }
 
-
 create_container() {
 # $1 --- $IMAGE_NAME
 # $2 --- ${config_file_render}
@@ -51,4 +50,9 @@ create_container() {
   else
     lxc init ${1} < ${2} | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   fi
+}
+
+on_error() {
+  ([[ -n "${tmpfile}" ]]  && [[ -f "${tmpfile}" ]])  && rm "${tmpfile}"
+  ([[ -n "${tmpfile1}" ]] && [[ -f "${tmpfile1}" ]]) && rm "${tmpfile1}"
 }
