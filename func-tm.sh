@@ -8,7 +8,7 @@ test_cloud_init_status() {
 # 1 - иначе 
   st=$2
   st=${st:=done}
-  r=$(lxc exec $1 -- cloud-init status --long)
+  r=$(${lxc_cmd} exec $1 -- cloud-init status --long)
   if [[ "$?" != "0" ]]; then
     # если ошибка образения к инстансу
     return 1

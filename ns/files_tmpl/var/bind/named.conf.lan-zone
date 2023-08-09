@@ -90,6 +90,6 @@ view \"internal-view\" {
     // разрешена рекурсия для внутренних клиентов
     //recursion yes;
     recursion no;
-    //allow-transfer {\"lan\"; \"avv\"; };
+    ${ALSO_NOTIFY_OPTION}
     ${ALLOW_TRANSFER_VIEW_INT}
 };
