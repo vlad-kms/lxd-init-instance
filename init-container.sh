@@ -212,7 +212,7 @@ debug "--------------------------------- argumentes"
 ### рендеринг $config_file
 template_render "$config_file" > "$config_file_render"
 
-[[ ${DEBUG} -qe 10 ]] && exit
+[ ${DEBUG} -qe 10 ] && exit
 
 ### НАЧАЛО РАБОТЫ С lxc container
 ### если здесь анонимный инстанс, то запуск через lxc launch.
