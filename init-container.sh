@@ -6,12 +6,16 @@
 # 101   - Неверный аргумент: файл с переменными
 # 102   - Неверный аргумент: файл с секретными переменными
 # 103   - Место для складывания для обработаных шаблонов не является каталогом
+# 104   - Ошибка открытия файла конфигурации контейнера
 # 110   - Ошибка передачи имени образа Linux
 # 120   - Ошибка при создании контейнера
 
 # подключение функция
+source ic_vars.sh
 source func.sh
 source func-tm.sh
+
+trap 'on_error' ERR
 
 DEBUG=0
 
@@ -31,6 +35,8 @@ DEF_FIRST_SH=first.sh
 DEF_FILES=files
 DEF_FILES_TMPL=files_tmpl
 DEF_FILES_TMPL_RENDER=files_tmpl_render
+
+DEF_DIR_CONFIGS=instances
 
 unset SCRIPT_NAME
 
@@ -73,22 +79,29 @@ TIMEOUT=${TIMEOUT:=60}
 ### Запуск контейнера с файлом конфигурации, в котором можно использовать cloud-init, profiles и т.д.
 ### Если есть --alias, то полностью работает алгоритм, ради которого все это задумывалось
 
+### Местоположение по-умолчанию для файлов конфигурации:
+### 1) в каталоге запуска скрипта ./;
+### 2) в каталоге ./${DEF_DIR_CONFIGS}
+ddc=${DEF_DIR_CONFIGS}
 ### каталог с конфигурацией == каталогу по-умолчанию
 dir_cfg=${DEF_GENERAL_CONFIG_DIR}
 ### если определен --alias 
+### 1) в каталоге запуска скрипта ./;
 [[ -n "${CONTAINER_NAME}" ]] && dir_cfg=${CONTAINER_NAME}
 ### убрать из имени каталога имя сервера, если имя контейнера было как server:container
 [[ "${dir_cfg}" =~ ":" ]] && dir_cfg=$(echo ${dir_cfg} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
+### 2) в каталоге ./${DEF_DIR_CONFIGS}
+([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]) || dir_cfg=${ddc}/${dir_cfg}
 ### если определен --config-dir, то каталог с конфигурацией == этому каталогу
 [[ -n "${CONFIG_DIR_NAME}" ]] && dir_cfg=${CONFIG_DIR_NAME}
-### после проверки $dir_cfg - каталог, где надо брать конфигурацию инстанса
 
+### теперь $dir_cfg - каталог, где надо брать конфигурацию инстанса
 ### Проверить что $dir_cfg существует и является каталогом
 ### Если нет, то ошибка и прервать скрипт
 res=0
 if ! ([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]);then
   echo "Неверные аргументы: неверно указан каталог \"${dir_cfg}\" с конфигурацией для инициализации экземпляра контейнера или он не существует";
-  exit 100
+  exit ${ERR_BAD_ARG}
 fi
 
 ### Подгружаем переменные
@@ -105,7 +118,7 @@ arg_vars="${VARS_NAME}"
 ### Если не файл,но передан в аргументе, то ошибка и прервать скрипт
 if ([[ -n "$arg_vars" ]] && [[ ! -f "$arg_vars" ]]);then
   echo "Неверные аргументы: неверно указан файл с переменными \"${arg_vars}\"";
-  exit 101
+  exit ${ERR_BAD_ARG_FILE_VARS_NOT}
 fi
 [[ -f ${arg_vars} ]] && source ${arg_vars} || unset arg_vars
 
@@ -118,7 +131,7 @@ arg_vault="${VAULTS_NAME}"
 ### Если не файл, но передан в аргументе, то ошибка и прервать скрипт
 if ([[ -n "$arg_vault" ]] && [[ ! -f "$arg_vault" ]]);then
   echo "Неверные аргументы: неверно указан файл с секретными переменными \"${arg_vault}\"";
-  exit 101
+  exit ${ERR_BAD_ARG_FILE_VARS_NOT}
 fi
 [[ -f ${arg_vault} ]] && source ${arg_vault} || unset arg_vault
 
@@ -138,6 +151,12 @@ config_file="${dir_cfg}/${DEF_CFG_YAML}"
 ### если файл cfg есть, то инит confgi_file_render,
 ### иначе очистить confgi_file_render
 [[ -f ${config_file} ]] && config_file_render="${config_file}${POSTFIX_CFG_YAML_RENDER}" || unset config_file_render
+# 104   - Не существует файл конфигурации контейнера
+### Выход, если не существует файла конфигурации контейнера
+[[ -f ${config_file} ]] || {
+  echo "Файл ${dir_cfg}/${DEF_CFG_YAML} не существует. Выполнение скрипта прервано";
+  exit ${ERR_FILE_CONFIG_NOT}
+}
 
 ### файл ловушки перед стартом инстанса
 hook_beforestart="${dir_cfg}/${DEF_HOOK_BEFORESTART}"
@@ -188,6 +207,7 @@ template_render "$config_file" > "$config_file_render"
 
 #exit
 
+### НАЧАЛО РАБОТЫ С lxc container
 ### если здесь анонимный инстанс, то запуск через lxc launch.
 ### Сразу завершение скрипта, пропуская все остальные шаги
 if [[ -n ${config_file} ]]; then
@@ -222,7 +242,7 @@ if [[ $ret -ne 0 ]]; then
 fi
 if [[ -z $CONTAINER_NAME ]]; then
   ### если имя контейнера пусто, то ошибка создания контейнера
-  exit 120
+  exit ${ERR_CREATE_CONTAINER}
 fi
 
 ### если есть скрипт, который надо выполнить при первом запуске,
@@ -268,7 +288,7 @@ if [[ -d "${dir_cfg}/${DEF_FILES_TMPL}" ]]; then
   if [[ -f $dtr ]]; then
     ### не является каталогом, ошибка 103
     echo "Неверные аргументы: каталог для подготовленных шаблонов \"$dtr\" не является каталогом";
-    exit 103
+    exit ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
   fi
   ### нет каталога, создать его
   [[ ! -d "${dtr}" ]] && mkdir "${dtr}"
