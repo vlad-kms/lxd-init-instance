@@ -8,4 +8,9 @@ ERR_FILE_CONFIG_NOT=104;                # Ошибка открытия файл
 ERR_IMAGE_NOT=110;                      # Ошибка передачи имени образа Linux
 ERR_CREATE_CONTAINER=120;               # Ошибка при создании контейнера
 
-lxc_cmd="lxc"
+lxc_cmd=lxc
+
+DEBUG=0
+DEBUG_LEVEL=1
+
+DEF_DIR_CONFIGS=instances

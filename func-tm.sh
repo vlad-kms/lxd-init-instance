@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#. func.sh
+
 test_cloud_init_status() {
 # $1 имя инстанса
 # $2 статус, по-умолчанию 'done'
@@ -52,5 +54,3 @@ status_cloud_init_tm(){
   return $res
 
 }
-
-
