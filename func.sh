@@ -21,7 +21,7 @@ help() {
   "
 }
 
-debug_echo() {
+debug() {
   level=$2
   level=${level:=$DEBUG_LEVEL}
   if [ $DEBUG -ne 0 ]; then
@@ -38,7 +38,7 @@ confgi_yaml_render() {
 }
 
 restart_instance() {
-  debug_echo "=== restarting instance"
+  debug "=== restarting instance"
   ${lxc_cmd} stop $CONTAINER_NAME
   ${lxc_cmd} start $CONTAINER_NAME
 }

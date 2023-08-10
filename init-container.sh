@@ -36,7 +36,7 @@ declare -a array_env
 
 args=$(getopt -u -o 'a:bc:de:hi:t:u:v:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,timeout:,vaults:,vars:,debug-level:' -- "$@")
 set -- $args
-debug_echo $args
+debug $args
 i=0
 for i; do
     case "$i" in
@@ -168,39 +168,39 @@ hook_afterstart="${dir_cfg}/${DEF_HOOK_AFTERSTART}"
 script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
 
-debug_echo "--------------------------------- argumentes"
-debug_echo "TIMEOUT:------------ $TIMEOUT"
-debug_echo "IMAGE_NAME:--------- $IMAGE_NAME"
-debug_echo "CONTAINER_NAME:----- $CONTAINER_NAME"
-debug_echo "CONFIG_DIR_NAME:---- $CONFIG_DIR_NAME"
-debug_echo "VARS_NAME:---------- $VARS_NAME"
-debug_echo "DEBUG--------------- $DEBUG"
-debug_echo "DEBUG_LEVEL--------- $DEBUG_LEVEL"
-debug_echo "--------------------------------- calculated variables"
-debug_echo "dir_cfg:------------ $dir_cfg"
-debug_echo "config_file:-------- $config_file"
-debug_echo "confgi_file_render:- $config_file_render"
+debug "--------------------------------- argumentes"
+debug "TIMEOUT:------------ $TIMEOUT"
+debug "IMAGE_NAME:--------- $IMAGE_NAME"
+debug "CONTAINER_NAME:----- $CONTAINER_NAME"
+debug "CONFIG_DIR_NAME:---- $CONFIG_DIR_NAME"
+debug "VARS_NAME:---------- $VARS_NAME"
+debug "DEBUG--------------- $DEBUG"
+debug "DEBUG_LEVEL--------- $DEBUG_LEVEL"
+debug "--------------------------------- calculated variables"
+debug "dir_cfg:------------ $dir_cfg"
+debug "config_file:-------- $config_file"
+debug "confgi_file_render:- $config_file_render"
 
-debug_echo "hook_afterstart:---- $hook_afterstart"
-debug_echo "hook_beforestart:--- $hook_beforestart"
-debug_echo "script_start:------- $script_start"
-debug_echo "action:------------- $action"
-debug_echo "--------------------------------- VARS files for source"
-debug_echo "global_vars:-------- ${global_vars}"
-debug_echo "project_vars:------- ${project_vars}"
-debug_echo "arg_vars:----------- ${arg_vars}"
-debug_echo "project_vault:------ ${project_vault}"
-debug_echo "arg_vault:---------- ${arg_vault}"
-debug_echo "array_env:---------- ${array_env[@]}"
-debug_echo "size array_env:----- ${#array_env[@]}"
+debug "hook_afterstart:---- $hook_afterstart"
+debug "hook_beforestart:--- $hook_beforestart"
+debug "script_start:------- $script_start"
+debug "action:------------- $action"
+debug "--------------------------------- VARS files for source"
+debug "global_vars:-------- ${global_vars}"
+debug "project_vars:------- ${project_vars}"
+debug "arg_vars:----------- ${arg_vars}"
+debug "project_vault:------ ${project_vault}"
+debug "arg_vault:---------- ${arg_vault}"
+debug "array_env:---------- ${array_env[@]}"
+debug "size array_env:----- ${#array_env[@]}"
 for t in ${array_env[@]}; do
-  debug_echo "array_env[]:-------- ${t}"
+  debug "array_env[]:-------- ${t}"
   #eval $t
 done
-debug_echo "lxc_cmd:------------ ${lxc_cmd}"
+debug "lxc_cmd:------------ ${lxc_cmd}"
 
-debug_echo "NET_INSTANCE:----- ${NET_INSTANCE}"
-debug_echo "--------------------------------- argumentes"
+debug "NET_INSTANCE:----- ${NET_INSTANCE}"
+debug "--------------------------------- argumentes"
 
 ### рендеринг $config_file
 template_render "$config_file" > "$config_file_render"
@@ -209,42 +209,30 @@ template_render "$config_file" > "$config_file_render"
 [ $DEBUG_LEVEL -ge 10 ] && exit 0
 
 ### НАЧАЛО РАБОТЫ С lxc container
-
-case "$action" in
-  'add')     {
-      echo "Action: add"
-      echo
-    }
-    ;;
-  'delete')  echo "Action: delete" ;;
-  'backup')  echo "Action: backup" ;;
-  else ) exit;;
-esac
-
 ### если здесь анонимный инстанс, то запуск через lxc launch.
 ### Сразу завершение скрипта, пропуская все остальные шаги
 if [[ -n ${config_file} ]]; then
   ### если есть файл config.yaml для инстанса
   if [[ -z $CONTAINER_NAME ]]; then
     ### здесь запуск анонимного инстанса
-    debug_echo "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}" . Затем сразу выход"
+    debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}" . Затем сразу выход"
     #${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}"
     CONTAINER_NAME=$(create_container ${IMAGE_NAME} ${config_file_render})
   else
     ### Инициализация инстанса
-    debug_echo "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < ${config_file_render}"
+    debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < ${config_file_render}"
     ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < "${config_file_render}"
   fi
 else
   ### если нет файла config.yaml для инстанса
   if [[ -z $CONTAINER_NAME ]]; then
     ### здесь запуск анонимного инстанса
-    debug_echo "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} . Затем сразу выход"
+    debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} . Затем сразу выход"
     #${lxc_cmd} launch ${IMAGE_NAME}
     CONTAINER_NAME=$(create_container ${IMAGE_NAME})
   else
     ### Инициализация инстанса
-    debug_echo "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}"
+    debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}"
     ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}
   fi
 fi
@@ -263,7 +251,7 @@ fi
 if [[ -n ${script_start} ]]; then
   ### что-то сделать до запуска контейнера
   dst=/opt/start/script.sh
-  debug_echo "--- Копирование скрипта: ${lxc_cmd} file push ${script_start} ${CONTAINER_NAME}${dst}"
+  debug "--- Копирование скрипта: ${lxc_cmd} file push ${script_start} ${CONTAINER_NAME}${dst}"
   ${lxc_cmd} file push -p --mode 0755 $script_start $CONTAINER_NAME$dst
   ### Выход если ошибка копирования скрипта запуска
   ret=$?
@@ -275,7 +263,7 @@ fi
 ### если есть каталог $DEF_FILES в каталоге с конфигурационными файлами,
 ### то скопировать из него все файлы (каталоги) в инстанс
 if [[ -d "${dir_cfg}/${DEF_FILES}" ]]; then
-  debug_echo "--- Работа с файлами"
+  debug "--- Работа с файлами"
   op=$(pwd)
   cd "${dir_cfg}/${DEF_FILES}"
   find . -name "*" -type f -print0 | xargs -I {} -r0 ${lxc_cmd} file push -p {} "${CONTAINER_NAME}/{}"
@@ -293,11 +281,11 @@ fi
 #DEF_FILES_TMPL=files_tm папка с шаблонами
 #DEF_FILES_TMPL_RENDER=files_tmpl_render папка с рендериными файлами
 if [[ -d "${dir_cfg}/${DEF_FILES_TMPL}" ]]; then
-  debug_echo "--- Работа с шаблонами"
+  debug "--- Работа с шаблонами"
   op=$(pwd)
   ### имя каталога для рендерованных шаблонов
   dtr="${op}/${dir_cfg}/${DEF_FILES_TMPL_RENDER}"
-  debug_echo "--- dtr: $dtr"
+  debug "--- dtr: $dtr"
   if [[ -f $dtr ]]; then
     ### не является каталогом, ошибка 103
     echo "Неверные аргументы: каталог для подготовленных шаблонов \"$dtr\" не является каталогом";
@@ -313,7 +301,7 @@ if [[ -d "${dir_cfg}/${DEF_FILES_TMPL}" ]]; then
   cp -r * ${dtr}
   cat "${tmpfile}" | while read item
   do
-    #debug_echo "--- rendering template item: $item"
+    #debug "--- rendering template item: $item"
     template_render $item > "${dtr}/$item"
   done
   rm "${tmpfile}"
@@ -331,18 +319,18 @@ fi
 
 ### ловушка перед стартом инстанса
 if [[ -n ${hook_beforestart} ]]; then
-  debug_echo "=== Ловушка перед запуском инстанс: $hook_beforestart"
+  debug "=== Ловушка перед запуском инстанс: $hook_beforestart"
   source ${hook_beforestart}
 fi
 ### Выход если ошибка при выполнении скрипта-ловушки перед запуском инстанса
 ret=$?
 if [[ $ret -ne 0 ]]; then
-  debug_echo "=== Ошибка после запуска скрипта-ловушки ПередЗапуском"
+  debug "=== Ошибка после запуска скрипта-ловушки ПередЗапуском"
   exit $ret
 fi
 
 ### СТАРТ
-debug_echo "--- Старт инстанс $CONTAINER_NAME"
+debug "--- Старт инстанс $CONTAINER_NAME"
 ${lxc_cmd} start $CONTAINER_NAME
 ### Выход если ошибка запуска инстанса $CONTAINER_NAME
 ret=$?
@@ -360,7 +348,7 @@ fi
 
 ### ловушка после старта инстанса и завершения работы cloud-init
 if [[ -n ${hook_afterstart} ]]; then
-  debug_echo "=== Ловушка после запуска инстанс: $hook_afterstart"
+  debug "=== Ловушка после запуска инстанс: $hook_afterstart"
   source "${hook_afterstart}"
 fi
 ### Выход если ошибка при выполнении скрипта-ловушки после запуском инстанса
@@ -371,7 +359,7 @@ fi
 
 ### скрипт после запуска инстанса, выполняемый внутри контейнера
 if [[ -n ${script_start} ]]; then
-  debug_echo "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
+  debug "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
   ${lxc_cmd} exec $CONTAINER_NAME -- sh -c ". ${dst}"
 fi
 
