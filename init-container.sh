@@ -1,16 +1,13 @@
 #!/bin/bash
 
-# подключение функция
+# подключение функций
 source global_vars.sh
 source func.sh
-source func-tm.sh
-
-lxc_cmd="lxc"
-cloud_init_wait=" > /dev/null"
+#source func-tm.sh
 
 trap 'on_error' ERR
 
-DEBUG=0
+DEF_DIR_CONFIGS=instances
 
 DEF_GENERAL_CONFIG_DIR=general
 DEF_CFG_YAML=cfg.yaml
@@ -29,8 +26,6 @@ DEF_FILES=files
 DEF_FILES_TMPL=files_tmpl
 DEF_FILES_TMPL_RENDER=files_tmpl_render
 
-DEF_DIR_CONFIGS=instances
-
 unset SCRIPT_NAME
 
 ####################################################################################
@@ -39,15 +34,18 @@ unset SCRIPT_NAME
 
 declare -a array_env
 
-args=$(getopt -u -o 'a:c:d:e:hi:t:u:v:' --long 'alias:,config-dir:,debug:,env:,help,image:,timeout:,vaults:,vars:' -- "$@")
+args=$(getopt -u -o 'a:bc:de:hi:t:u:v:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,timeout:,vaults:,vars:,debug-level:' -- "$@")
 set -- $args
-#echo $args
+debug $args
 i=0
 for i; do
     case "$i" in
+        '--add')                action="add";           shift;;
         '-a' | '--alias')       CONTAINER_NAME=${2};    shift 2 ;;
         '-c' | '--config-dir')  CONFIG_DIR_NAME=${2};   shift 2 ;;
-        '-d' | '--debug')       DEBUG=$2;                shift 2 ;;
+        '-d' | '--delete')      action="delete";        shift;;
+        '--debug')              DEBUG=1;                shift;;
+        '--debug-level')        DEBUG_LEVEL=$2;         shift 2 ;;
         '-e' | '--env')         array_env+=( $2 );      shift 2 ;;
         '-h' | '--help')        help; exit 0;;
         '-i' | '--image')       arg_image_name=${2};    shift 2 ;;
@@ -57,53 +55,50 @@ for i; do
         else )                  help; exit 0;;
     esac
 done
-
-# --timeout, по-умолчанию = 60 сек
+### --timeout, по-умолчанию = 60 сек
 TIMEOUT=${TIMEOUT:=60}
+action=${action:="add"}
 
 ### Подготовка командной строки в зависимости от ключа --debug
-if [[ ${DEBUG} -eq 0 ]]; then
+if [ "${DEBUG}" -eq 0 ]; then
   lxc_cmd="${lxc_cmd} -q"
-  cloud_init_wait=" > /dev/null"
-elif [[ ${DEBUG} -eq 1 ]]; then
-  lxc_cmd="${lxc_cmd}"
-  cloud_init_wait=""
 else
-  lxc_cmd="${lxc_cmd} --debug"
-  cloud_init_wait=""
+  if [ $DEBUG_LEVEL -eq 1 ]; then
+    lxc_cmd="${lxc_cmd}"
+  elif [ ${DEBUG_LEVEL} -eq 2 ]; then
+    lxc_cmd="${lxc_cmd} --debug"
+  else
+    lxc_cmd="${lxc_cmd} --debug"
+  fi
 fi
 
-### разбор --alias и --config_dir_name
-### есть --alias, есть --config_dir_name
-### есть --alias, нет  --config_dir_name
-### нет  --alias, есть --config_dir_name
+### разбор --alias и --config_dir
+### есть --alias, есть --config_dir
+### есть --alias, нет  --config_dir
+### нет  --alias, есть --config_dir
 ###   ${lxc_cmd} launch < $CONFIG_DIR_NAME/$DEF_CFG_YAML
-### нет  --alias, нет  --config_dir_name
+### нет  --alias, нет  --config_dir
 ###   ${lxc_cmd} launch < $DEF_GENERAL_CONFIG_DIR/$DEF_CFG_YAML
 ### Т.е. если нет --alias, то выполняется только одна команда ${lxc_cmd} launch < cfg_file .
 ### Запуск контейнера с файлом конфигурации, в котором можно использовать cloud-init, profiles и т.д.
 ### Если есть --alias, то полностью работает алгоритм, ради которого все это задумывалось
 
-### Местоположение по-умолчанию для файлов конфигурации:
-### 1) в каталоге запуска скрипта ./;
-### 2) в каталоге ./${DEF_DIR_CONFIGS}
-ddc=${DEF_DIR_CONFIGS}
-### каталог с конфигурацией == каталогу по-умолчанию
-dir_cfg=${DEF_GENERAL_CONFIG_DIR}
-### если определен --alias 
-### 1) в каталоге запуска скрипта ./;
-[[ -n "${CONTAINER_NAME}" ]] && dir_cfg=${CONTAINER_NAME}
-### убрать из имени каталога имя сервера, если имя контейнера было как server:container
-[[ "${dir_cfg}" =~ ":" ]] && dir_cfg=$(echo ${dir_cfg} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
-### 2) в каталоге ./${DEF_DIR_CONFIGS}
-([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]) || dir_cfg=${ddc}/${dir_cfg}
-### если определен --config-dir, то каталог с конфигурацией == этому каталогу
-[[ -n "${CONFIG_DIR_NAME}" ]] && dir_cfg=${CONFIG_DIR_NAME}
-
+### Вычисляем каталог с файлами конфигурации контейнера
+if [[ -n $CONFIG_DIR_NAME ]]; then
+  ### если определен --config-dir, то каталог с конфигурацией == этому каталогу
+  dir_cfg=${CONFIG_DIR_NAME}
+else
+  ### сначала ищем каталог по имени алиаса в ./ и ./instances,
+  ### если такого нет, то ищем каталог general в ./ и ./instances
+  ### если определен --alias 
+  [[ -n "${CONTAINER_NAME}" ]] && dir_cfg=${CONTAINER_NAME}
+  [[ -n $dir_cfg ]] && dir_cfg=$(find_dir_in_location $dir_cfg)
+  ### если нет каталога с именем контейнера, то попробовать каталог general
+  [[ -z $dir_cfg ]] && dir_cfg=$(find_dir_in_location general)
+fi
 ### теперь $dir_cfg - каталог, где надо брать конфигурацию инстанса
 ### Проверить что $dir_cfg существует и является каталогом
 ### Если нет, то ошибка и прервать скрипт
-res=0
 if ! ([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]);then
   echo "Неверные аргументы: неверно указан каталог \"${dir_cfg}\" с конфигурацией для инициализации экземпляра контейнера или он не существует";
   exit ${ERR_BAD_ARG}
@@ -179,6 +174,8 @@ debug "IMAGE_NAME:--------- $IMAGE_NAME"
 debug "CONTAINER_NAME:----- $CONTAINER_NAME"
 debug "CONFIG_DIR_NAME:---- $CONFIG_DIR_NAME"
 debug "VARS_NAME:---------- $VARS_NAME"
+debug "DEBUG--------------- $DEBUG"
+debug "DEBUG_LEVEL--------- $DEBUG_LEVEL"
 debug "--------------------------------- calculated variables"
 debug "dir_cfg:------------ $dir_cfg"
 debug "config_file:-------- $config_file"
@@ -187,6 +184,7 @@ debug "confgi_file_render:- $config_file_render"
 debug "hook_afterstart:---- $hook_afterstart"
 debug "hook_beforestart:--- $hook_beforestart"
 debug "script_start:------- $script_start"
+debug "action:------------- $action"
 debug "--------------------------------- VARS files for source"
 debug "global_vars:-------- ${global_vars}"
 debug "project_vars:------- ${project_vars}"
@@ -204,15 +202,11 @@ debug "lxc_cmd:------------ ${lxc_cmd}"
 debug "NET_INSTANCE:----- ${NET_INSTANCE}"
 debug "--------------------------------- argumentes"
 
-#test_cloud_init_done
-#echo "test_cloud_init_done: $?"
-#status_cloud_init_tm $TIMEOUT
-#echo "status_cloud_init_tm: $?"
-
 ### рендеринг $config_file
 template_render "$config_file" > "$config_file_render"
 
-[ ${DEBUG} -qe 10 ] && exit
+### выход, не выполняя никаких фактичеких действий с LXD
+[ $DEBUG_LEVEL -ge 10 ] && exit 0
 
 ### НАЧАЛО РАБОТЫ С lxc container
 ### если здесь анонимный инстанс, то запуск через lxc launch.
@@ -372,4 +366,4 @@ fi
 ### если требуется перезапуск, то выполнить его
 [ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
 
-echo "Container alias: ${CONTAINER_NAME}"
+echo -e "\nContainer alias: ${CONTAINER_NAME}"
