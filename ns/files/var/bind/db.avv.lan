@@ -1,7 +1,7 @@
 $ORIGIN .
 $TTL 300	; 5 minutes
 home.lan		IN SOA	ns.home.lan. admin.home.lan. (
-				734        ; serial
+				778        ; serial
 				21600      ; refresh (6 hours)
 				1800       ; retry (30 minutes)
 				1209600    ; expire (2 weeks)
@@ -17,7 +17,7 @@ alts			CNAME	serv-http-02
 androidstudio		CNAME	ast
 $TTL 900	; 15 minutes
 ang-nb			A	192.168.16.141
-ans1			A	192.168.16.184
+ans1			A	192.168.16.199
 ansible			A	192.168.16.175
 $TTL 480	; 8 minutes
 apache1c		A	192.168.15.206
@@ -54,6 +54,9 @@ eve-ng			A	192.168.16.30
 eve-ng-bak		A	192.168.16.29
 $TTL 300	; 5 minutes
 ftp			CNAME	root
+$TTL 600	; 10 minutes
+full-cricket		A	192.168.15.144
+$TTL 300	; 5 minutes
 git			CNAME	hp
 gitlab			CNAME	hp
 $TTL 600	; 10 minutes
@@ -105,13 +108,18 @@ $TTL 600	; 10 minutes
 pfSense			A	192.168.16.198
 phpstorm64		A	192.168.15.213
 phpstorm86		A	192.168.15.207
+pleased-sunfish		A	192.168.15.146
 $TTL 480	; 8 minutes
 POCO-F3			A	192.168.15.116
-POCO-X4-Pro-5G		A	192.168.15.106
+$TTL 900	; 15 minutes
+POCO-X4-Pro-5G		A	192.168.16.198
 $TTL 300	; 5 minutes
 print			A	192.168.15.253
 ps64			CNAME	phpstorm64
 ps86			CNAME	phpstorm86
+$TTL 600	; 10 minutes
+quality-porpoise	A	192.168.15.140
+$TTL 300	; 5 minutes
 registry		CNAME	hp
 $TTL 600	; 10 minutes
 root			A	192.168.15.202
@@ -123,6 +131,10 @@ serv-http-01		CNAME	av
 $TTL 600	; 10 minutes
 serv-http-02		A	192.168.15.80
 stkh			A	192.168.16.201
+tst1			A	192.168.15.157
+tst2			A	192.168.17.95
+tst4			A	192.168.15.145
+up-boxer		A	192.168.15.147
 $TTL 480	; 8 minutes
 vovka-10-vm		A	192.168.15.204
 $TTL 900	; 15 minutes
