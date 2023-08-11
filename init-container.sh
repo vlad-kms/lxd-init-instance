@@ -1,112 +1,261 @@
 #!/bin/bash
 
-# подключение функция
+# подключение функций
 source global_vars.sh
 source func.sh
-source func-tm.sh
-
-lxc_cmd="lxc"
-cloud_init_wait=" > /dev/null"
+#source func-tm.sh
 
 trap 'on_error' ERR
 
-DEBUG=0
-
-DEF_GENERAL_CONFIG_DIR=general
-DEF_CFG_YAML=cfg.yaml
-POSTFIX_CFG_YAML_RENDER=""
-POSTFIX_CFG_YAML_RENDER=_render
-
-DEF_HOOK_AFTERSTART=hook_afterstart.sh
-DEF_HOOK_BEFORESTART=hook_beforestart.sh
-
-DEF_VARS_CONF=vars.conf
-DEF_VARS_VAULT=vars.vault
-
-DEF_FIRST_SH=first.sh
-
-DEF_FILES=files
-DEF_FILES_TMPL=files_tmpl
-DEF_FILES_TMPL_RENDER=files_tmpl_render
-
-DEF_DIR_CONFIGS=instances
-
 unset SCRIPT_NAME
 
+######################################################################################
+# ФУНКЦИИ
+######################################################################################
+
+add_instance() {
+  ### если здесь анонимный инстанс, то запуск через lxc launch.
+  ### Сразу завершение скрипта, пропуская все остальные шаги
+  if [[ -n ${config_file} ]]; then
+    ### если есть файл config.yaml для инстанса
+    if [[ -z $CONTAINER_NAME ]]; then
+      ### здесь запуск анонимного инстанса
+      debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}" . Затем сразу выход"
+      #${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}"
+      CONTAINER_NAME=$(create_container ${IMAGE_NAME} ${config_file_render})
+    else
+      ### Инициализация инстанса
+      debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < ${config_file_render}"
+      ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < "${config_file_render}"
+    fi
+  else
+    ### если нет файла config.yaml для инстанса
+    if [[ -z $CONTAINER_NAME ]]; then
+      ### здесь запуск анонимного инстанса
+      debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} . Затем сразу выход"
+      #${lxc_cmd} launch ${IMAGE_NAME}
+      CONTAINER_NAME=$(create_container ${IMAGE_NAME})
+    else
+      ### Инициализация инстанса
+      debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}"
+      ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}
+    fi
+  fi
+  ### Выход если ошибка инициализации инстанса
+  ret=$?
+  if [[ $ret -ne 0 ]]; then
+    exit $ret
+  fi
+  if [[ -z $CONTAINER_NAME ]]; then
+    ### если имя контейнера пусто, то ошибка создания контейнера
+    break_script ${ERR_CREATE_CONTAINER}
+  fi
+
+  ### если есть скрипт, который надо выполнить при первом запуске,
+  ### то скопировать его в созданный инстансе /run/start/#SCRIPT_NAME
+  if [[ -n ${script_start} ]]; then
+    ### что-то сделать до запуска контейнера
+    dst=/opt/start/script.sh
+    debug "--- Копирование скрипта: ${lxc_cmd} file push ${script_start} ${CONTAINER_NAME}${dst}"
+    ${lxc_cmd} file push -p --mode 0755 $script_start $CONTAINER_NAME$dst
+    ### Выход если ошибка копирования скрипта запуска
+    ret=$?
+    if [[ $ret -ne 0 ]]; then
+      exit $ret
+    fi
+  fi
+
+  ### если есть каталог $DEF_FILES в каталоге с конфигурационными файлами,
+  ### то скопировать из него все файлы (каталоги) в инстанс
+  if [[ -d "${dir_cfg}/${DEF_FILES}" ]]; then
+    debug "--- Работа с файлами"
+    op=$(pwd)
+    cd "${dir_cfg}/${DEF_FILES}"
+    find . -name "*" -type f -print0 | xargs -I {} -r0 ${lxc_cmd} file push -p {} "${CONTAINER_NAME}/{}"
+    ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
+    ret=$?
+    cd $op
+    if [[ $ret -ne 0 ]]; then
+      exit $ret
+    fi
+  fi
+
+  ### если есть каталог $DEF_FILES_TMPL в каталоге с конфигурационными файлами,
+  ### то скопировать из него все файлы (каталоги) в инстанс, предварительно шаблонизировав
+  ### с помощью eval
+  #DEF_FILES_TMPL=files_tm папка с шаблонами
+  #DEF_FILES_TMPL_RENDER=files_tmpl_render папка с рендериными файлами
+  if [[ -d "${dir_cfg}/${DEF_FILES_TMPL}" ]]; then
+    debug "--- Работа с шаблонами"
+    op=$(pwd)
+    ### имя каталога для рендерованных шаблонов
+    dtr="${op}/${dir_cfg}/${DEF_FILES_TMPL_RENDER}"
+    debug "--- dtr: $dtr"
+    if [[ -f $dtr ]]; then
+      ### не является каталогом, ошибка 103
+      item_msg_err ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
+      exit ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
+    fi
+    ### нет каталога, создать его
+    [[ ! -d "${dtr}" ]] && mkdir "${dtr}"
+
+    cd "${dir_cfg}/${DEF_FILES_TMPL}"
+    tmpfile=$(mktemp)
+    find . -name "*" -type f -print | sed 's/^\.\///' > "${tmpfile}"
+    ### создать дерево каталогов в подготовленных шаблонах аналогичное в шаблонах
+    cp -r * ${dtr}
+    cat "${tmpfile}" | while read item
+    do
+      #debug "--- rendering template item: $item"
+      template_render $item > "${dtr}/$item"
+    done
+    rm "${tmpfile}"
+    ### копировать файлы рендерированных шаблонов
+    cd $dtr
+    find . -name "*" -type f -print0 | xargs -I {} -r0 ${lxc_cmd} file push -p {} "${CONTAINER_NAME}/{}"
+    
+    ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
+    ret=$?
+    cd $op
+    if [[ $ret -ne 0 ]]; then
+      exit $ret
+    fi
+  fi
+
+  ### ловушка перед стартом инстанса
+  if [[ -n ${hook_beforestart} ]]; then
+    debug "=== Ловушка перед запуском инстанс: $hook_beforestart"
+    source ${hook_beforestart}
+  fi
+  ### Выход если ошибка при выполнении скрипта-ловушки перед запуском инстанса
+  ret=$?
+  if [[ $ret -ne 0 ]]; then
+    debug "=== Ошибка после запуска скрипта-ловушки ПередЗапуском"
+    exit $ret
+  fi
+
+  ### СТАРТ
+  debug "--- Старт инстанс $CONTAINER_NAME"
+  ${lxc_cmd} start $CONTAINER_NAME
+  ### Выход если ошибка запуска инстанса $CONTAINER_NAME
+  ret=$?
+  if [[ $ret -ne 0 ]]; then
+    exit $ret
+  fi
+
+  ### Если существует cloud-init, то ожидать пока cloud-init завершит работу (статус == done)
+  if [[ ${DEBUG} -eq 0 ]]; then
+    ss=$(${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait")
+  else
+    ${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
+  fi
+  #${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
+
+  ### ловушка после старта инстанса и завершения работы cloud-init
+  if [[ -n ${hook_afterstart} ]]; then
+    debug "=== Ловушка после запуска инстанс: $hook_afterstart"
+    source "${hook_afterstart}"
+  fi
+  ### Выход если ошибка при выполнении скрипта-ловушки после запуском инстанса
+  ret=$?
+  if [[ $ret -ne 0 ]]; then
+    exit $ret
+  fi
+
+  ### скрипт после запуска инстанса, выполняемый внутри контейнера
+  if [[ -n ${script_start} ]]; then
+    debug "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
+    ${lxc_cmd} exec $CONTAINER_NAME -- sh -c ". ${dst}"
+  fi
+
+  ### если требуется перезапуск, то выполнить его
+  [ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
+
+  echo -e "\nContainer alias: ${CONTAINER_NAME}"
+}
+
 ####################################################################################
-####################################################################################
+# СКРИПТ
 ####################################################################################
 
 declare -a array_env
 
-args=$(getopt -u -o 'a:c:d:e:hi:t:u:v:' --long 'alias:,config-dir:,debug:,env:,help,image:,timeout:,vaults:,vars:' -- "$@")
+args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:' -- "$@")
 set -- $args
-#echo $args
+debug $args
 i=0
 for i; do
     case "$i" in
+        '--add')                action="add";           shift;;
         '-a' | '--alias')       CONTAINER_NAME=${2};    shift 2 ;;
+        '-b' | '--backup')      action="backup";        shift;;
         '-c' | '--config-dir')  CONFIG_DIR_NAME=${2};   shift 2 ;;
-        '-d' | '--debug')       DEBUG=$2;                shift 2 ;;
+        '-d' | '--delete')      action="delete";        shift;;
+        '--debug')              DEBUG=1;                shift;;
+        '--debug-level')        DEBUG_LEVEL=$2;         shift 2 ;;
         '-e' | '--env')         array_env+=( $2 );      shift 2 ;;
         '-h' | '--help')        help; exit 0;;
         '-i' | '--image')       arg_image_name=${2};    shift 2 ;;
+        '-n' | '--not-backup')  NOT_BACKUP_BEFORE_DELETE=1; shift;;
         '-t' | '--timeout')     TIMEOUT=${2};           shift 2 ;;
         '-u' | '--vaults')      VAULTS_NAME=${2};       shift 2 ;;
         '-v' | '--vars')        VARS_NAME=${2};         shift 2 ;;
+        '-w' | '--where-copy')  where_copy=${2};        shift 2 ;;
         else )                  help; exit 0;;
     esac
 done
-
-# --timeout, по-умолчанию = 60 сек
+### --timeout, по-умолчанию = 60 сек
 TIMEOUT=${TIMEOUT:=60}
+action=${action:="add"}
 
 ### Подготовка командной строки в зависимости от ключа --debug
-if [[ ${DEBUG} -eq 0 ]]; then
+if [ "${DEBUG}" -eq 0 ]; then
   lxc_cmd="${lxc_cmd} -q"
-  cloud_init_wait=" > /dev/null"
-elif [[ ${DEBUG} -eq 1 ]]; then
-  lxc_cmd="${lxc_cmd}"
-  cloud_init_wait=""
 else
-  lxc_cmd="${lxc_cmd} --debug"
-  cloud_init_wait=""
+  if [ $DEBUG_LEVEL -eq 1 ]; then
+    lxc_cmd="${lxc_cmd}"
+  elif [ ${DEBUG_LEVEL} -eq 2 ]; then
+    lxc_cmd="${lxc_cmd} --debug"
+  else
+    lxc_cmd="${lxc_cmd} --debug"
+  fi
 fi
 
-### разбор --alias и --config_dir_name
-### есть --alias, есть --config_dir_name
-### есть --alias, нет  --config_dir_name
-### нет  --alias, есть --config_dir_name
+### разбор --alias и --config_dir
+### есть --alias, есть --config_dir
+### есть --alias, нет  --config_dir
+### нет  --alias, есть --config_dir
 ###   ${lxc_cmd} launch < $CONFIG_DIR_NAME/$DEF_CFG_YAML
-### нет  --alias, нет  --config_dir_name
+### нет  --alias, нет  --config_dir
 ###   ${lxc_cmd} launch < $DEF_GENERAL_CONFIG_DIR/$DEF_CFG_YAML
 ### Т.е. если нет --alias, то выполняется только одна команда ${lxc_cmd} launch < cfg_file .
 ### Запуск контейнера с файлом конфигурации, в котором можно использовать cloud-init, profiles и т.д.
 ### Если есть --alias, то полностью работает алгоритм, ради которого все это задумывалось
 
-### Местоположение по-умолчанию для файлов конфигурации:
-### 1) в каталоге запуска скрипта ./;
-### 2) в каталоге ./${DEF_DIR_CONFIGS}
-ddc=${DEF_DIR_CONFIGS}
-### каталог с конфигурацией == каталогу по-умолчанию
-dir_cfg=${DEF_GENERAL_CONFIG_DIR}
-### если определен --alias 
-### 1) в каталоге запуска скрипта ./;
-[[ -n "${CONTAINER_NAME}" ]] && dir_cfg=${CONTAINER_NAME}
-### убрать из имени каталога имя сервера, если имя контейнера было как server:container
-[[ "${dir_cfg}" =~ ":" ]] && dir_cfg=$(echo ${dir_cfg} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
-### 2) в каталоге ./${DEF_DIR_CONFIGS}
-([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]) || dir_cfg=${ddc}/${dir_cfg}
-### если определен --config-dir, то каталог с конфигурацией == этому каталогу
-[[ -n "${CONFIG_DIR_NAME}" ]] && dir_cfg=${CONFIG_DIR_NAME}
-
+### Вычисляем каталог с файлами конфигурации контейнера
+if [[ -n $CONFIG_DIR_NAME ]]; then
+  ### если определен --config-dir, то каталог с конфигурацией == этому каталогу
+  dir_cfg=${CONFIG_DIR_NAME}
+else
+  ### сначала ищем каталог по имени алиаса в ./ и ./instances,
+  ### если такого нет, то ищем каталог general в ./ и ./instances
+  ### если определен --alias
+  CONFIG_DIR_NAME=${CONTAINER_NAME}
+  [[ -n "${CONTAINER_NAME}" ]] && dir_cfg=${CONTAINER_NAME}
+  [[ -n $dir_cfg ]] && dir_cfg=$(find_dir_in_location $dir_cfg)
+  ### если нет каталога с именем контейнера, то попробовать каталог general
+  if [[ -z $dir_cfg ]]; then
+    dir_cfg=$(find_dir_in_location general)
+    CONFIG_DIR_NAME=${dir_cfg}
+  else
+    CONFIG_DIR_NAME=${dir_cfg}
+  fi
+fi
 ### теперь $dir_cfg - каталог, где надо брать конфигурацию инстанса
 ### Проверить что $dir_cfg существует и является каталогом
 ### Если нет, то ошибка и прервать скрипт
-res=0
-if ! ([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]);then
-  echo "Неверные аргументы: неверно указан каталог \"${dir_cfg}\" с конфигурацией для инициализации экземпляра контейнера или он не существует";
-  exit ${ERR_BAD_ARG}
+if ! ([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]); then
+  break_script ${ERR_BAD_ARG}
 fi
 
 ### Подгружаем переменные
@@ -122,8 +271,7 @@ arg_vars="${VARS_NAME}"
 ### Проверить что $arg_vars является файлом, если передан как аргумент
 ### Если не файл,но передан в аргументе, то ошибка и прервать скрипт
 if ([[ -n "$arg_vars" ]] && [[ ! -f "$arg_vars" ]]);then
-  echo "Неверные аргументы: неверно указан файл с переменными \"${arg_vars}\"";
-  exit ${ERR_BAD_ARG_FILE_VARS_NOT}
+  break_script ${ERR_BAD_ARG_FILE_VARS_NOT}
 fi
 [[ -f ${arg_vars} ]] && source ${arg_vars} || unset arg_vars
 
@@ -135,8 +283,7 @@ arg_vault="${VAULTS_NAME}"
 ### Проверить что $arg_vault является файлом, если передан как аргумент
 ### Если не файл, но передан в аргументе, то ошибка и прервать скрипт
 if ([[ -n "$arg_vault" ]] && [[ ! -f "$arg_vault" ]]);then
-  echo "Неверные аргументы: неверно указан файл с секретными переменными \"${arg_vault}\"";
-  exit ${ERR_BAD_ARG_FILE_VARS_NOT}
+  break_script ${ERR_BAD_ARG_FILE_SECRET_VARS_NOT}
 fi
 [[ -f ${arg_vault} ]] && source ${arg_vault} || unset arg_vault
 
@@ -159,7 +306,8 @@ config_file="${dir_cfg}/${DEF_CFG_YAML}"
 # 104   - Не существует файл конфигурации контейнера
 ### Выход, если не существует файла конфигурации контейнера
 [[ -f ${config_file} ]] || {
-  echo "Файл ${dir_cfg}/${DEF_CFG_YAML} не существует. Выполнение скрипта прервано";
+  #echo "Файл ${dir_cfg}/${DEF_CFG_YAML} не существует. Выполнение скрипта прервано";
+  item_msg_err ${ERR_FILE_CONFIG_NOT}
   exit ${ERR_FILE_CONFIG_NOT}
 }
 
@@ -173,12 +321,20 @@ hook_afterstart="${dir_cfg}/${DEF_HOOK_AFTERSTART}"
 script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
 
+### местоположение куда копировать бэкапы
+where_copy=${where_copy:=${dir_cfg}/${DEF_WHERE_COPY}/}
+# не является каталогом
+[[ -f $where_copy ]] && break_script $ERR_NOT_DIR_WHERE_COPY
+
 debug "--------------------------------- argumentes"
 debug "TIMEOUT:------------ $TIMEOUT"
 debug "IMAGE_NAME:--------- $IMAGE_NAME"
 debug "CONTAINER_NAME:----- $CONTAINER_NAME"
 debug "CONFIG_DIR_NAME:---- $CONFIG_DIR_NAME"
 debug "VARS_NAME:---------- $VARS_NAME"
+debug "DEBUG--------------- $DEBUG"
+debug "DEBUG_LEVEL--------- $DEBUG_LEVEL"
+debug "NOT_BACKUP_BEFORE_DELETE: $NOT_BACKUP_BEFORE_DELETE"
 debug "--------------------------------- calculated variables"
 debug "dir_cfg:------------ $dir_cfg"
 debug "config_file:-------- $config_file"
@@ -187,6 +343,9 @@ debug "confgi_file_render:- $config_file_render"
 debug "hook_afterstart:---- $hook_afterstart"
 debug "hook_beforestart:--- $hook_beforestart"
 debug "script_start:------- $script_start"
+debug "action:------------- $action"
+debug "where_copy:--------- $where_copy"
+debug "script_backup:------ ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
 debug "--------------------------------- VARS files for source"
 debug "global_vars:-------- ${global_vars}"
 debug "project_vars:------- ${project_vars}"
@@ -204,172 +363,34 @@ debug "lxc_cmd:------------ ${lxc_cmd}"
 debug "NET_INSTANCE:----- ${NET_INSTANCE}"
 debug "--------------------------------- argumentes"
 
-#test_cloud_init_done
-#echo "test_cloud_init_done: $?"
-#status_cloud_init_tm $TIMEOUT
-#echo "status_cloud_init_tm: $?"
-
 ### рендеринг $config_file
 template_render "$config_file" > "$config_file_render"
 
-[ ${DEBUG} -qe 10 ] && exit
+### выход, не выполняя никаких фактичеких действий с LXD
+[ $DEBUG_LEVEL -ge 10 ] && exit 0
 
 ### НАЧАЛО РАБОТЫ С lxc container
-### если здесь анонимный инстанс, то запуск через lxc launch.
-### Сразу завершение скрипта, пропуская все остальные шаги
-if [[ -n ${config_file} ]]; then
-  ### если есть файл config.yaml для инстанса
-  if [[ -z $CONTAINER_NAME ]]; then
-    ### здесь запуск анонимного инстанса
-    debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}" . Затем сразу выход"
-    #${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}"
-    CONTAINER_NAME=$(create_container ${IMAGE_NAME} ${config_file_render})
-  else
-    ### Инициализация инстанса
-    debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < ${config_file_render}"
-    ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < "${config_file_render}"
-  fi
-else
-  ### если нет файла config.yaml для инстанса
-  if [[ -z $CONTAINER_NAME ]]; then
-    ### здесь запуск анонимного инстанса
-    debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} . Затем сразу выход"
-    #${lxc_cmd} launch ${IMAGE_NAME}
-    CONTAINER_NAME=$(create_container ${IMAGE_NAME})
-  else
-    ### Инициализация инстанса
-    debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}"
-    ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}
-  fi
-fi
-### Выход если ошибка инициализации инстанса
-ret=$?
-if [[ $ret -ne 0 ]]; then
-  exit $ret
-fi
-if [[ -z $CONTAINER_NAME ]]; then
-  ### если имя контейнера пусто, то ошибка создания контейнера
-  exit ${ERR_CREATE_CONTAINER}
-fi
 
-### если есть скрипт, который надо выполнить при первом запуске,
-### то скопировать его в созданный инстансе /run/start/#SCRIPT_NAME
-if [[ -n ${script_start} ]]; then
-  ### что-то сделать до запуска контейнера
-  dst=/opt/start/script.sh
-  debug "--- Копирование скрипта: ${lxc_cmd} file push ${script_start} ${CONTAINER_NAME}${dst}"
-  ${lxc_cmd} file push -p --mode 0755 $script_start $CONTAINER_NAME$dst
-  ### Выход если ошибка копирования скрипта запуска
-  ret=$?
-  if [[ $ret -ne 0 ]]; then
-    exit $ret
-  fi
-fi
+case "$action" in
+  'add')    {
+      echo "Action: add container"
+      add_instance
+    }
+    ;;
+  'delete') {
+      echo "Action: delete container"
+      delete_instance
+    }
+    ;;
+  'backup') {
+      echo "Action: backup data container"
+      backup_instance
+    }
+    ;;
+  else )    {
+      echo "Action: UNDEFINED"
+      exit
+    }
+    ;;
+esac
 
-### если есть каталог $DEF_FILES в каталоге с конфигурационными файлами,
-### то скопировать из него все файлы (каталоги) в инстанс
-if [[ -d "${dir_cfg}/${DEF_FILES}" ]]; then
-  debug "--- Работа с файлами"
-  op=$(pwd)
-  cd "${dir_cfg}/${DEF_FILES}"
-  find . -name "*" -type f -print0 | xargs -I {} -r0 ${lxc_cmd} file push -p {} "${CONTAINER_NAME}/{}"
-  ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
-  ret=$?
-  cd $op
-  if [[ $ret -ne 0 ]]; then
-    exit $ret
-  fi
-fi
-
-### если есть каталог $DEF_FILES_TMPL в каталоге с конфигурационными файлами,
-### то скопировать из него все файлы (каталоги) в инстанс, предварительно шаблонизировав
-### с помощью eval
-#DEF_FILES_TMPL=files_tm папка с шаблонами
-#DEF_FILES_TMPL_RENDER=files_tmpl_render папка с рендериными файлами
-if [[ -d "${dir_cfg}/${DEF_FILES_TMPL}" ]]; then
-  debug "--- Работа с шаблонами"
-  op=$(pwd)
-  ### имя каталога для рендерованных шаблонов
-  dtr="${op}/${dir_cfg}/${DEF_FILES_TMPL_RENDER}"
-  debug "--- dtr: $dtr"
-  if [[ -f $dtr ]]; then
-    ### не является каталогом, ошибка 103
-    echo "Неверные аргументы: каталог для подготовленных шаблонов \"$dtr\" не является каталогом";
-    exit ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
-  fi
-  ### нет каталога, создать его
-  [[ ! -d "${dtr}" ]] && mkdir "${dtr}"
-
-  cd "${dir_cfg}/${DEF_FILES_TMPL}"
-  tmpfile=$(mktemp)
-  find . -name "*" -type f -print | sed 's/^\.\///' > "${tmpfile}"
-  ### создать дерево каталогов в подготовленных шаблонах аналогичное в шаблонах
-  cp -r * ${dtr}
-  cat "${tmpfile}" | while read item
-  do
-    #debug "--- rendering template item: $item"
-    template_render $item > "${dtr}/$item"
-  done
-  rm "${tmpfile}"
-  ### копировать файлы рендерированных шаблонов
-  cd $dtr
-  find . -name "*" -type f -print0 | xargs -I {} -r0 ${lxc_cmd} file push -p {} "${CONTAINER_NAME}/{}"
-  
-  ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
-  ret=$?
-  cd $op
-  if [[ $ret -ne 0 ]]; then
-    exit $ret
-  fi
-fi
-
-### ловушка перед стартом инстанса
-if [[ -n ${hook_beforestart} ]]; then
-  debug "=== Ловушка перед запуском инстанс: $hook_beforestart"
-  source ${hook_beforestart}
-fi
-### Выход если ошибка при выполнении скрипта-ловушки перед запуском инстанса
-ret=$?
-if [[ $ret -ne 0 ]]; then
-  debug "=== Ошибка после запуска скрипта-ловушки ПередЗапуском"
-  exit $ret
-fi
-
-### СТАРТ
-debug "--- Старт инстанс $CONTAINER_NAME"
-${lxc_cmd} start $CONTAINER_NAME
-### Выход если ошибка запуска инстанса $CONTAINER_NAME
-ret=$?
-if [[ $ret -ne 0 ]]; then
-  exit $ret
-fi
-
-### Если существует cloud-init, то ожидать пока cloud-init завершит работу (статус == done)
-if [[ ${DEBUG} -eq 0 ]]; then
-  ss=$(${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait")
-else
-  ${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
-fi
-#${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
-
-### ловушка после старта инстанса и завершения работы cloud-init
-if [[ -n ${hook_afterstart} ]]; then
-  debug "=== Ловушка после запуска инстанс: $hook_afterstart"
-  source "${hook_afterstart}"
-fi
-### Выход если ошибка при выполнении скрипта-ловушки после запуском инстанса
-ret=$?
-if [[ $ret -ne 0 ]]; then
-  exit $ret
-fi
-
-### скрипт после запуска инстанса, выполняемый внутри контейнера
-if [[ -n ${script_start} ]]; then
-  debug "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
-  ${lxc_cmd} exec $CONTAINER_NAME -- sh -c ". ${dst}"
-fi
-
-### если требуется перезапуск, то выполнить его
-[ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
-
-echo "Container alias: ${CONTAINER_NAME}"
