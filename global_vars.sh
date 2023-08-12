@@ -58,6 +58,7 @@ DEF_WHERE_COPY=backup
 NOT_BACKUP_BEFORE_DELETE=0
 
 use_name=1
+use_dir_cfg=0
 
 item_msg_err() {
   [[ -z $1 ]] && i=$ERR_UNDEFINED || i=$1
