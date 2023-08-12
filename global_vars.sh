@@ -9,6 +9,7 @@ ERR_FILE_CONFIG_NOT=104;                # Ошибка открытия файл
 ERR_BAD_ARG_NOT_CONATINER_NAME=105;     # Неверный аргумент: не передано имя контейнера
 ERR_IMAGE_NOT=110;                      # Ошибка передачи имени образа Linux
 ERR_CREATE_CONTAINER=120;               # Ошибка при создании контейнера
+ERR_BAD_ACTION_LASTCHAR_DIR=125;        # Неверное действия с последним символом в имени каталога
 ERR_NOT_SCRIPT_BACKUP=200;              # В каталоге конфигурации нет скрипта для бэкапа ${dir_cfg}/${DEF_SCRIPT_BACKUP}
 ERR_NOT_DIR_WHERE_COPY=201;             # Указанное место для фалов бэкапа не является каталогом ${where_copy}
 
@@ -24,6 +25,7 @@ msg_arr[${ERR_IMAGE_NOT}]='Неверный image'
 msg_arr[${ERR_CREATE_CONTAINER}]='Ошибка создания контейнера'
 msg_arr[${ERR_NOT_SCRIPT_BACKUP}]='В каталоге конфигурации нет скрипта для бэкапа "${dir_cfg}/${DEF_SCRIPT_BACKUP}"'
 msg_arr[${ERR_NOT_DIR_WHERE_COPY}]='Место куда складывать бэкапы не является каталогом "${where_copy}"'
+msg_arr[${ERR_BAD_ACTION_LASTCHAR_DIR}]='Неверное действие ${act} с последним символом в имени каталога'
 
 lxc_cmd=lxc
 
@@ -54,6 +56,8 @@ DEF_SCRIPT_BACKUP=backup.sh
 DEF_WHERE_COPY=backup
 
 NOT_BACKUP_BEFORE_DELETE=0
+
+use_name=1
 
 item_msg_err() {
   [[ -z $1 ]] && i=$ERR_UNDEFINED || i=$1
