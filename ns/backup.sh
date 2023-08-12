@@ -1,19 +1,34 @@
 #!/bin/bash
 
+#/var/bind
+#	keys/*
+#	db-arpa.15.168.192
+#	db-arpa.16.168.192
+#	db.avv.lan
+#	db.mrovo.lan
+#	db.oc.home.lan
+#	named.conf.acl
+#	named.conf.lan-zone
+#/etc/bind
+#	named.conf
+#	named.conf.local
+#	named.conf.options
+
+name_tar=/root/named.tar.gz
+
 lxc -q exec ${CONTAINER_NAME} -- sh -c "rndc sync -clean > /dev/null && rc-service named stop > /dev/null"
-ret_code=$?
-if [[ $ret_code -eq 0 ]]; then
-  d=( $(lxc exec ${CONTAINER_NAME} -q -- find /var/bind -maxdepth 1 -name "db*") )
-  ret_code=$?
-  if [[ $ret_code -eq 0 ]]; then
-    for el in ${d[@]}; do
-      #echo "${lxc_cmd} file pull -p ${CONTAINER_NAME}$el ${where_copy}"
-      lxc file pull -q -p ${CONTAINER_NAME}$el ${where_copy}
-      ret=$?
-      [[ $ret -ne 0 ]] && ret_code=$ret
-    done
-    lxc exec ${CONTAINER_NAME} -q -- sh -c "rc-service named start > /dev/null"
-    if [[ $ret_code -ne 0 ]]; then
+if [[ $? -eq 0 ]]; then
+  # /etc/bind
+  lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf ${name_tar} --exclude=*.jnl /etc/bind/named.conf /etc/bind/named.conf.local /etc/bind/named.conf.options /var/bind/named.conf.lan-zone /var/bind/named.conf.acl /var/bind/db* > /dev/null"
+  if [[ $? -eq 0 ]]; then
+    lxc file pull -q -p ${CONTAINER_NAME}${name_tar} ${where_copy}
+    if [[ $? -eq 0 ]]; then
+      lxc exec ${CONTAINER_NAME} -q -- sh -c "rc-service named start > /dev/null"
+      if [[ $? -ne 0 ]]; then
+        ret_message="Ошибка запуска сервиса named (bind9)"
+        ret_code=1000
+      fi
+    else
       ret_message="Ошибка при копировании файлов"
       ret_code=1000
     fi
@@ -26,6 +41,5 @@ else
   ### ошибка остановки сервиса named
   ret_message="Ошибка остановки сервиса named (bind9)"
   ret_code=1000
-  #return
 fi
 
