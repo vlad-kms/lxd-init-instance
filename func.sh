@@ -19,7 +19,9 @@ help() {
     -t, --timeout Number        - период ожидания в сек
     -u, --vaults FileName       - файл со значениями секретных переменных для сборки контейнера, которые не хранятся в git
     -v, --vars FileName         - файл со значениями переменных для сборки контейнера, которые хранятся в git
-    -w, --where-copy            - куда сделать бэкап данных из контейнера
+    -w, --where-copy DirName    - куда сделать бэкап данных из контейнера
+    --use-name Number           - <>0 - добавлять в конце к каталогу $where_copy имя контейнера
+                                  иначе не добавлять. По-умолчанию = 1
   "
 }
 
@@ -32,11 +34,8 @@ debug() {
 }
 
 break_script() {
-  if [[ $1 -lt 1000 ]]; then
-    item_msg_err $1
-  else
-    echo $2
-  fi
+  item_msg_err $1
+  [[ -z $2 ]] || echo $2
   exit $1
 }
 
@@ -119,17 +118,17 @@ delete_instance() {
   ### удалить контейнер
   # ловушка перед удалением контейнера
   ret_code=0
-  debug '--- ret_code=$(source ${dir_cfg}/${DEF_HOOK_BEFOREDELETE})'
+  debug '--- source ${dir_cfg}/${DEF_HOOK_BEFOREDELETE}'
   ([[ -n ${dir_cfg} ]] && [[ -d ${dir_cfg} ]] && [[ -f ${dir_cfg}/${DEF_HOOK_BEFOREDELETE} ]]) && source ${dir_cfg}/${DEF_HOOK_BEFOREDELETE}
   
   if [ $ret_code -lt 10 ]; then
     debug "--- $lxc_cmd delete --force ${CONTAINER_NAME}"
-    #$lxc_cmd delete --force ${CONTAINER_NAME}
+    [ $DEBUG_LEVEL -lt 10 ] && $lxc_cmd delete --force ${CONTAINER_NAME}
     ret_code=$?
     [[ $ret_code -ne 0 ]] && break_script $ret_code
   elif [ $ret_code -eq 11 ]; then
     debug "ret_code: $ret_code"
-    #$lxc_cmd delete --force ${CONTAINER_NAME}
+    [ $DEBUG_LEVEL -lt 10 ] && $lxc_cmd delete --force ${CONTAINER_NAME}
     return
   else
     debug "ret_code: $ret_code"
@@ -152,5 +151,42 @@ backup_instance() {
   [[ $ret_code -ne 0 ]] && break_script ${ret_code} "${ret_message}"
 }
 
-#echo $(get_part_from_container_name 'hhh:ccc' 'h')
-#echo $(get_part_from_container_name 'hhh:ccc')
+last_char_dir() {
+  [[ -z $1 ]] && {
+    echo $1
+    return
+  }
+  s=${1}
+  l=${#s}
+  act=$2; act=${act:='add'}
+  ( [[ "${act}" == "add" ]] || [[ "${act}" == "del" ]] ) || act='add'
+  case "$act" in
+    add)
+      [[ "${s: -1}" != "/" ]] && s="${s}/"
+      ;;
+    del)
+      [[ "${s: -1}" == "/" ]] && s="${s:0:$((l - 1))}"
+      ;;
+    *) break_script ${ERR_BAD_ACTION_LASTCHAR_DIR}
+  esac
+  echo "${s}"
+}
+
+
+test_func_sh(){
+  #echo $(get_part_from_container_name 'hhh:ccc' 'h')
+  #echo $(get_part_from_container_name 'hhh:ccc')
+
+  #last_char_dir
+  #last_char_dir dir/1
+  #last_char_dir dir/1 add
+  #last_char_dir dir/1/
+  #last_char_dir dir/1/ add
+  #echo '================='
+  #last_char_dir dir/1 del
+  #last_char_dir dir/1/ del
+  
+  echo 123 > /dev/null;
+}
+
+#test_func_sh
