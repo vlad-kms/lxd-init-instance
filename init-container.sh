@@ -178,29 +178,29 @@ add_instance() {
 
 declare -a array_env
 
-args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:' -- "$@")
+args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:' -- "$@")
 set -- $args
 debug $args
 i=0
 for i; do
     case "$i" in
-        '--add')                action="add";           shift;;
-        '-a' | '--alias')       CONTAINER_NAME=${2};    shift 2 ;;
-        '-b' | '--backup')      action="backup";        shift;;
-        '-c' | '--config-dir')  CONFIG_DIR_NAME=${2};   shift 2 ;;
-        '-d' | '--delete')      action="delete";        shift;;
-        '--debug')              DEBUG=1;                shift;;
-        '--debug-level')        DEBUG_LEVEL=$2;         shift 2 ;;
-        '-e' | '--env')         array_env+=( $2 );      shift 2 ;;
-        '-h' | '--help')        help; exit 0;;
-        '-i' | '--image')       arg_image_name=${2};    shift 2 ;;
+        '--add')                action="add";         shift;;
+        '-a' | '--alias')       CONTAINER_NAME=${2};  shift 2;;
+        '-b' | '--backup')      action="backup";      shift;;
+        '-c' | '--config-dir')  CONFIG_DIR_NAME=${2}; shift 2;;
+        '-d' | '--delete')      action="delete";      shift;;
+        '--debug')              DEBUG=1;              shift;;
+        '--debug-level')        DEBUG_LEVEL=$2;       shift 2;;
+        '-e' | '--env')         array_env+=( $2 );    shift 2;;
+        '-h' | '--help')        help; exit 0          ;;
+        '-i' | '--image')       arg_image_name=${2};  shift 2;;
         '-n' | '--not-backup')  NOT_BACKUP_BEFORE_DELETE=1; shift;;
-        '-t' | '--timeout')     TIMEOUT=${2};           shift 2 ;;
-        '-u' | '--vaults')      VAULTS_NAME=${2};       shift 2 ;;
-        '-v' | '--vars')        VARS_NAME=${2};         shift 2 ;;
-        '-w' | '--where-copy')  arg_where_copy=${2};    shift 2 ;;
-        #else )                  help; exit 0;;
-        *)                      help; exit 0;;
+        '-t' | '--timeout')     TIMEOUT=${2};         shift 2;;
+        '-u' | '--vaults')      VAULTS_NAME=${2};     shift 2;;
+        '-v' | '--vars')        VARS_NAME=${2};       shift 2;;
+        '-w' | '--where-copy')  arg_where_copy=${2};  shift 2;;
+        '--use-name')           use_name=${2};        shift 2;;
+        else)                   help; exit 0          ;;
     esac
 done
 ### --timeout, по-умолчанию = 60 сек
@@ -321,12 +321,18 @@ script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
 
 ### местоположение куда копировать бэкапы
-where_copy=${where_copy:=${dir_cfg}/${DEF_WHERE_COPY}/$(get_part_from_container_name ${CONTAINER_NAME})}
+where_copy=${where_copy:=${dir_cfg}/${DEF_WHERE_COPY}}
 [[ -n $arg_where_copy ]] && where_copy=${arg_where_copy}
-# не является каталогом
-[[ -f $where_copy ]] && break_script $ERR_NOT_DIR_WHERE_COPY
+# последний символ не д.б. '/'
+where_copy=$(last_char_dir "${where_copy}" del)
+# добавить имя контейнера к пути бэкапа
+[ ${use_name} -ne 0 ] && where_copy=${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME})
+# последний символ не д.б. '/'
+where_copy=$(last_char_dir "${where_copy}" del)
+# ошибка, если файл существует и не является каталогом
+( [[  -a $f ]] && [[ ! -d $f ]] ) && break_script $ERR_NOT_DIR_WHERE_COPY
 # последний символ д.б. '/'
-[[ "${where_copy:-1}" != "/" ]] && where_copy="${where_copy}/"
+where_copy=$(last_char_dir "${where_copy}" add)
 
 debug "--------------------------------- argumentes"
 debug "TIMEOUT:------------ $TIMEOUT"
@@ -347,6 +353,7 @@ debug "hook_beforestart:--- $hook_beforestart"
 debug "script_start:------- $script_start"
 debug "action:------------- $action"
 debug "where_copy:--------- $where_copy"
+debug "use_name:----------- $use_name"
 debug "script_backup:------ ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
 debug "--------------------------------- VARS files for source"
 debug "global_vars:-------- ${global_vars}"
