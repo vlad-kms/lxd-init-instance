@@ -170,8 +170,6 @@ add_instance() {
 
   ### если требуется перезапуск, то выполнить его
   [ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
-
-  echo -e "\nContainer alias: ${CONTAINER_NAME}"
 }
 
 ####################################################################################
@@ -200,8 +198,9 @@ for i; do
         '-t' | '--timeout')     TIMEOUT=${2};           shift 2 ;;
         '-u' | '--vaults')      VAULTS_NAME=${2};       shift 2 ;;
         '-v' | '--vars')        VARS_NAME=${2};         shift 2 ;;
-        '-w' | '--where-copy')  where_copy=${2};        shift 2 ;;
-        else )                  help; exit 0;;
+        '-w' | '--where-copy')  arg_where_copy=${2};    shift 2 ;;
+        #else )                  help; exit 0;;
+        *)                      help; exit 0;;
     esac
 done
 ### --timeout, по-умолчанию = 60 сек
@@ -322,9 +321,12 @@ script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
 
 ### местоположение куда копировать бэкапы
-where_copy=${where_copy:=${dir_cfg}/${DEF_WHERE_COPY}/}
+where_copy=${where_copy:=${dir_cfg}/${DEF_WHERE_COPY}/$(get_part_from_container_name ${CONTAINER_NAME})}
+[[ -n $arg_where_copy ]] && where_copy=${arg_where_copy}
 # не является каталогом
 [[ -f $where_copy ]] && break_script $ERR_NOT_DIR_WHERE_COPY
+# последний символ д.б. '/'
+[[ "${where_copy:-1}" != "/" ]] && where_copy="${where_copy}/"
 
 debug "--------------------------------- argumentes"
 debug "TIMEOUT:------------ $TIMEOUT"
@@ -394,3 +396,5 @@ case "$action" in
     ;;
 esac
 
+echo -e "\nContainer alias: ${CONTAINER_NAME}"
+echo "${CONTAINER_NAME}"

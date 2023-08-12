@@ -76,13 +76,29 @@ on_error() {
   ([[ -n "${tmpfile1}" ]] && [[ -f "${tmpfile1}" ]]) && rm "${tmpfile1}"
 }
 
+get_part_from_container_name() {
+  host_lxc=$(echo $1 | sed -n -e  's/\(.*\):\(.*\)/\1/p')
+  container_lxc=$(echo $1 | sed -n -e  's/\(.*\):\(.*\)/\2/p')
+  r=$2
+  r=${r:="c"}
+  case "$r" in
+    'h')  echo $host_lxc;
+      ;;
+#    'c') echo $container_lxc;
+#      ;;
+    *) echo $container_lxc;
+      ;;
+  esac
+}
+
 find_dir_in_location() {
 # $1 --- имя контейнера или имя каталога. Как имя контейнера может содержать ':'.
 #        поэтому будет вырезано имя каталога, все что после ':'
 # Возврат $1 (DEF_DIR_CONFIGS/$1), если он существет и является каталогом. Иначе возврат ''
   tdc=${1}
   ### убрать из имени каталога имя сервера, если имя контейнера было как server:container
-  [[ "${tdc}" =~ ":" ]] && tdc=$(echo ${tdc} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
+  #[[ "${tdc}" =~ ":" ]] && tdc=$(echo ${tdc} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
+  [[ "${tdc}" =~ ":" ]] && tdc=$(get_part_from_container_name $tdc)
   # вернуть имя каталога, если он существует в ./
   if ([[ -n "$tdc" ]] && [[ -d "$tdc" ]]); then
     echo $tdc
@@ -119,7 +135,7 @@ delete_instance() {
     debug "ret_code: $ret_code"
   fi
   # ловушка после удаления контейнера
-  debug '--- ret_code=$(source ${dir_cfg}/${DEF_HOOK_AFTERDELETE})'
+  debug '--- source ${dir_cfg}/${DEF_HOOK_AFTERDELETE}'
   ([[ -n ${dir_cfg} ]] && [[ -d ${dir_cfg} ]] && [[ -f ${dir_cfg}/${DEF_HOOK_AFTERDELETE} ]]) && {
     source ${dir_cfg}/${DEF_HOOK_AFTERDELETE}
   }
@@ -127,6 +143,7 @@ delete_instance() {
 
 backup_instance() {
   ### делаем backup контейнера
+  ret_code=0
   debug "--- Бэкап данных из контейнера ${CONTAINER_NAME}"
   [[ -z ${CONTAINER_NAME} ]] && break_script ${ERR_BAD_ARG_NOT_CONATINER_NAME}
   [[ ! -f ${dir_cfg}/${DEF_SCRIPT_BACKUP} ]] && break_script ${ERR_NOT_SCRIPT_BACKUP}
@@ -134,3 +151,6 @@ backup_instance() {
   source ${dir_cfg}/${DEF_SCRIPT_BACKUP}
   [[ $ret_code -ne 0 ]] && break_script ${ret_code} "${ret_message}"
 }
+
+#echo $(get_part_from_container_name 'hhh:ccc' 'h')
+#echo $(get_part_from_container_name 'hhh:ccc')
