@@ -178,7 +178,7 @@ add_instance() {
 
 declare -a array_env
 
-args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:' -- "$@")
+args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:' -- "$@")
 set -- $args
 debug $args
 i=0
@@ -200,6 +200,7 @@ for i; do
         '-v' | '--vars')        VARS_NAME=${2};       shift 2;;
         '-w' | '--where-copy')  arg_where_copy=${2};  shift 2;;
         '--use-name')           use_name=${2};        shift 2;;
+        '--use-dir_cfg')        use_dir_cfg=${2};     shift 2;;
         else)                   help; exit 0          ;;
     esac
 done
@@ -321,7 +322,8 @@ script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
 
 ### местоположение куда копировать бэкапы
-where_copy=${where_copy:=${dir_cfg}/${DEF_WHERE_COPY}}
+[ $use_dir_cfg -ne 0 ] && pref="${dir_cfg}/" || pref=""
+where_copy=${where_copy:=${pref}${DEF_WHERE_COPY}}
 [[ -n $arg_where_copy ]] && where_copy=${arg_where_copy}
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
@@ -361,7 +363,6 @@ debug "project_vars:------- ${project_vars}"
 debug "arg_vars:----------- ${arg_vars}"
 debug "project_vault:------ ${project_vault}"
 debug "arg_vault:---------- ${arg_vault}"
-debug "array_env:---------- ${array_env[@]}"
 debug "size array_env:----- ${#array_env[@]}"
 for t in ${array_env[@]}; do
   debug "array_env[]:-------- ${t}"
@@ -376,7 +377,7 @@ debug "--------------------------------- argumentes"
 template_render "$config_file" > "$config_file_render"
 
 ### выход, не выполняя никаких фактичеких действий с LXD
-[ $DEBUG_LEVEL -ge 10 ] && exit 0
+[ $DEBUG_LEVEL -ge 100 ] && exit 0
 
 ### НАЧАЛО РАБОТЫ С lxc container
 

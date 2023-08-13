@@ -1,6 +1,6 @@
 show answer
 key hmac-md5:home-lan-key $KEY_HOME_LAN
-server $IPV4_NM
+server $IPV4
 ;update delete router-khv.home.lan.
 ;update delete nsr.home.lan.
 ;update delete nsr2.home.lan.

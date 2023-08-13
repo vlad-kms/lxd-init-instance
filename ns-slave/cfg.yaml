@@ -66,11 +66,6 @@ config:
             max-udp-size 4096;
             version none;
           };
-      - path: /etc/periodic/15min/upd-arpa.sh
-        permissions: \"0755\"
-        content: |
-          #!/bin/sh
-          cd /root/bind_dyn/arpa && ./home.lan-ptr
     runcmd:
       - [rc-update, add, sysctl, default]
       - [rc-service, sysctl, start]
@@ -82,8 +77,8 @@ config:
     ethernets:
       eth0:
         addresses:
-          - $IPV4
-        gateway4: $GW_DEF
+          - $IPV4/$MASK
+        gateway4: $GW
         nameservers:
           search: [home.lan, klinika.lan, mrovo.lan]
           addresses: [127.0.0.1, 8.8.8.8]

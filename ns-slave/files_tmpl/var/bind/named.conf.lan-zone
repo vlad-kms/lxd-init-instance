@@ -44,9 +44,6 @@ view \"internal-view\" {
     type slave;
     file \"db.avv.lan.slave\";
     masters { $IPV4_MASTER; };
-//        update-policy {
-//            grant home-lan-key wildcard *.home.lan. ANY;
-//        };	
   };
 
   zone \"oc.home.lan\" in {
@@ -65,22 +62,16 @@ view \"internal-view\" {
     type slave;
     file \"db-arpa.16.168.192.slave\";
     masters { $IPV4_MASTER; };
-#    update-policy {
-#      grant home-lan-key wildcard *.16.168.192.in-addr.arpa. ANY;
-#    };	
   };
 
   zone \"15.168.192.in-addr.arpa\" {
     type slave;
     file \"db-arpa.15.168.192.slave\";
     masters { $IPV4_MASTER; };
-#    update-policy {
-#      grant home-lan-key wildcard *.15.168.192.in-addr.arpa. ANY;
-#    };	
   };
 
   recursion no;
   //allow-transfer {\"lan\"; \"avv\"; };
-  //${ALLOW_TRANSFER_VIEW_INT}
-  allow-transfer { any; };
+  ${ALLOW_TRANSFER_VIEW_INT}
+  //allow-transfer { any; };
 };
