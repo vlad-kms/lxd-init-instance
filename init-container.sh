@@ -363,7 +363,6 @@ debug "project_vars:------- ${project_vars}"
 debug "arg_vars:----------- ${arg_vars}"
 debug "project_vault:------ ${project_vault}"
 debug "arg_vault:---------- ${arg_vault}"
-debug "array_env:---------- ${array_env[@]}"
 debug "size array_env:----- ${#array_env[@]}"
 for t in ${array_env[@]}; do
   debug "array_env[]:-------- ${t}"
@@ -378,7 +377,7 @@ debug "--------------------------------- argumentes"
 template_render "$config_file" > "$config_file_render"
 
 ### выход, не выполняя никаких фактичеких действий с LXD
-[ $DEBUG_LEVEL -ge 10 ] && exit 0
+[ $DEBUG_LEVEL -ge 100 ] && exit 0
 
 ### НАЧАЛО РАБОТЫ С lxc container
 

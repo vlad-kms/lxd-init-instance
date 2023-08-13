@@ -1,6 +1,6 @@
 show answer
 key hmac-md5:home-lan-key $KEY_HOME_LAN
-server $IPV4_NM
+server $IPV4
 update delete d-dev-m.home.lan.
 update add docker-dev.home.lan. 1200 A 192.168.16.53
 update add d-dev-m.home.lan. 1200 CNAME docker-dev.home.lan.

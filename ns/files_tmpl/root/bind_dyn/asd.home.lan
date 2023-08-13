@@ -1,6 +1,6 @@
 show answer
 key hmac-md5:home-lan-key $KEY_HOME_LAN
-server $IPV4_NM
+server $IPV4
 ; 5053
 ;prereq nxrrset tst1.home.lan. A
 update delete asd.home.lan.
