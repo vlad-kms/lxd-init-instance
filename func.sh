@@ -22,6 +22,8 @@ help() {
     -w, --where-copy DirName    - куда сделать бэкап данных из контейнера
     --use-name Number           - <>0 - добавлять в конце к каталогу $where_copy имя контейнера
                                   иначе не добавлять. По-умолчанию = 1
+    --use-dir_cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY $dir_cfg, т.е. каталог будет ($dir_cfg/$DEF_WHERE_COPY),
+                                  иначе не добавлять. По-умолчанию = 0
   "
 }
 
@@ -147,7 +149,7 @@ backup_instance() {
   [[ -z ${CONTAINER_NAME} ]] && break_script ${ERR_BAD_ARG_NOT_CONATINER_NAME}
   [[ ! -f ${dir_cfg}/${DEF_SCRIPT_BACKUP} ]] && break_script ${ERR_NOT_SCRIPT_BACKUP}
   debug "--- Выполнить ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
-  source ${dir_cfg}/${DEF_SCRIPT_BACKUP}
+  [[ $DEBUG_LEVEL -lt 90 ]] && source ${dir_cfg}/${DEF_SCRIPT_BACKUP}
   [[ $ret_code -ne 0 ]] && break_script ${ret_code} "${ret_message}"
 }
 

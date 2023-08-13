@@ -1,7 +1,7 @@
 show answer
 ;key hmac-sha512:av-kms-ru-key Ry91RpVnKZIOEjmV5Bkptjj5tBn5wAvgO0zPiZGTKd2WCw7tLhqFy7GW7jJ/9ZpgNM4z+Vep7JtcugNRvO+rzw==
 key hmac-md5:home-lan-key $KEY_HOME_LAN
-server $IPV4_NM
+server $IPV4
 ; 5053
 ;prereq nxrrset tst1.home.lan. A
 update delete labinet.home.lan.
