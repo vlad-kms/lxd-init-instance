@@ -15,9 +15,10 @@
 #	named.conf.options
 
 name_tar=/root/named.tar.gz
+force_backup=1
 
 lxc -q exec ${CONTAINER_NAME} -- sh -c "rndc sync -clean > /dev/null && rc-service named stop > /dev/null"
-if [[ $? -eq 0 ]]; then
+if [[ $? -eq 0 ]] || [[ $force_backup -ne 0 ]]; then
   # /etc/bind
   lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf ${name_tar} --exclude=*.jnl /etc/bind/named.conf /etc/bind/named.conf.local /etc/bind/named.conf.options /var/bind/named.conf.lan-zone /var/bind/named.conf.acl /var/bind/db* > /dev/null"
   if [[ $? -eq 0 ]]; then

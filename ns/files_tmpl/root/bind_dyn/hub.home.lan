@@ -1,5 +1,5 @@
 show answer
 key hmac-md5:home-lan-key $KEY_HOME_LAN
-server $IPV4_NM
+server $IPV4
 update add hub.home.lan. 600 CNAME d-prod-m.home.lan.
 send

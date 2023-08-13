@@ -81,11 +81,8 @@ config:
     ethernets:
       eth0:
         addresses:
-          - $IPV4
-        gateway4: $GW_DEF
-        nameservers:
-          search: [home.lan, klinika.lan, mrovo.lan]
-          addresses: [127.0.0.1, 8.8.8.8]
+          - $IPV4/$MASK
+        gateway4: $GW
 profiles:
   - default
   - low_mem
