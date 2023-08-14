@@ -24,23 +24,37 @@ help() {
                                   иначе не добавлять. По-умолчанию = 1
     --use-dir_cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY $dir_cfg, т.е. каталог будет ($dir_cfg/$DEF_WHERE_COPY),
                                   иначе не добавлять. По-умолчанию = 0
+    -x, --export                - экспорт образ контейнера
   "
 }
 
 debug() {
   level=$2
   level=${level:=$DEBUG_LEVEL}
-  if [ $DEBUG -ne 0 ]; then
+  if [[ $DEBUG -ne 0 ]]; then
     echo "deb::: $1"
   fi
 }
 
+########################################
+# Вывести строку и прервать выполнение скрипта
+# Вход:
+#     $1 - код строки из массива $msg_arr
+#     $2 - дополнительная строка для вывода
+########################################
 break_script() {
   item_msg_err $1
   [[ -z $2 ]] || echo $2
   exit $1
 }
 
+########################################
+# Сделать рендеринг файла с помощью eval
+# Вход:
+#     $1 - имя файла для рендеринга
+# Выход:
+#     строка после рендеринга
+########################################
 template_render() {
   eval "echo \"$(cat $1)\""  
 }
@@ -49,6 +63,9 @@ confgi_yaml_render() {
   echo "123"
 }
 
+########################################
+# restart container
+########################################
 restart_instance() {
   debug "=== restarting instance"
   ${lxc_cmd} stop $CONTAINER_NAME
@@ -75,6 +92,7 @@ create_container() {
 on_error() {
   ([[ -n "${tmpfile}" ]]  && [[ -f "${tmpfile}" ]])  && rm "${tmpfile}"
   ([[ -n "${tmpfile1}" ]] && [[ -f "${tmpfile1}" ]]) && rm "${tmpfile1}"
+  #exit 1
 }
 
 get_part_from_container_name() {
@@ -92,10 +110,10 @@ get_part_from_container_name() {
   esac
 }
 
-find_dir_in_location() {
 # $1 --- имя контейнера или имя каталога. Как имя контейнера может содержать ':'.
 #        поэтому будет вырезано имя каталога, все что после ':'
 # Возврат $1 (DEF_DIR_CONFIGS/$1), если он существет и является каталогом. Иначе возврат ''
+find_dir_in_location() {
   tdc=${1}
   ### убрать из имени каталога имя сервера, если имя контейнера было как server:container
   #[[ "${tdc}" =~ ":" ]] && tdc=$(echo ${tdc} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
@@ -111,38 +129,55 @@ find_dir_in_location() {
 }
 
 delete_instance() {
+### Удаление контейнера
   ### делаем backup контейнера, если $NOT_BACKUP_BEFORE_DELETE ==0
+  ret_code=0
   if [ $NOT_BACKUP_BEFORE_DELETE -eq 0 ]; then
     debug "--- Бэкап данных из контейнера ${CONTAINER_NAME}"
-    backup_instance
+    backup_data_instance
   fi
-  
+  if [[ ret_code -gt 0 ]]; then
+    # если ошибка после бэкапа
+    debug "Error after backup"
+  fi
+
   ### удалить контейнер
   # ловушка перед удалением контейнера
-  ret_code=0
+  # из ловушки должен возвращаться $ret_code:
+  # =0  - продолжить стандартную работу: удаление, ловушка после удаления
+  # =1  - удаление, пропустить ловушку после удаления
+  # =2  - пропустить удаление, вызвать ловушку после удаления
+  # >=3 - пропустить удаление, пропустить ловушку после удаления
   debug '--- source ${dir_cfg}/${DEF_HOOK_BEFOREDELETE}'
   ([[ -n ${dir_cfg} ]] && [[ -d ${dir_cfg} ]] && [[ -f ${dir_cfg}/${DEF_HOOK_BEFOREDELETE} ]]) && source ${dir_cfg}/${DEF_HOOK_BEFOREDELETE}
   
-  if [ $ret_code -lt 10 ]; then
-    debug "--- $lxc_cmd delete --force ${CONTAINER_NAME}"
-    [ $DEBUG_LEVEL -lt 10 ] && $lxc_cmd delete --force ${CONTAINER_NAME}
-    ret_code=$?
-    [[ $ret_code -ne 0 ]] && break_script $ret_code
-  elif [ $ret_code -eq 11 ]; then
+  if [ $ret_code -eq 0 ]; then
     debug "ret_code: $ret_code"
-    [ $DEBUG_LEVEL -lt 10 ] && $lxc_cmd delete --force ${CONTAINER_NAME}
+    debug "--- $lxc_cmd delete --force ${CONTAINER_NAME}"
+    [ $DEBUG_LEVEL -lt 90 ] && $lxc_cmd delete --force ${CONTAINER_NAME}
+    [[ $? -ne 0 ]] && break_script $ERR_DELETE_CONTAINER
+  elif [ $ret_code -eq 1 ]; then
+    debug "ret_code: $ret_code"
+    debug "--- $lxc_cmd delete --force ${CONTAINER_NAME}"
+    [ $DEBUG_LEVEL -lt 90 ] && $lxc_cmd delete --force ${CONTAINER_NAME}
+    [[ $? -ne 0 ]] && break_script $ERR_DELETE_CONTAINER
+    $ret_code=0
     return
+  elif [ $ret_code -eq 2 ]; then
+    debug "ret_code: $ret_code"
   else
     debug "ret_code: $ret_code"
+    return
   fi
-  # ловушка после удаления контейнера
+  [[ -z ${ret_message} ]] || echo "${ret_message}"
+
+    # ловушка после удаления контейнера
   debug '--- source ${dir_cfg}/${DEF_HOOK_AFTERDELETE}'
-  ([[ -n ${dir_cfg} ]] && [[ -d ${dir_cfg} ]] && [[ -f ${dir_cfg}/${DEF_HOOK_AFTERDELETE} ]]) && {
-    source ${dir_cfg}/${DEF_HOOK_AFTERDELETE}
-  }
+  ([[ -n ${dir_cfg} ]] && [[ -d ${dir_cfg} ]] && [[ -f ${dir_cfg}/${DEF_HOOK_AFTERDELETE} ]]) && source ${dir_cfg}/${DEF_HOOK_AFTERDELETE}
+
 }
 
-backup_instance() {
+backup_data_instance() {
   ### делаем backup контейнера
   ret_code=0
   debug "--- Бэкап данных из контейнера ${CONTAINER_NAME}"
@@ -150,18 +185,73 @@ backup_instance() {
   [[ ! -f ${dir_cfg}/${DEF_SCRIPT_BACKUP} ]] && break_script ${ERR_NOT_SCRIPT_BACKUP}
   debug "--- Выполнить ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
   [[ $DEBUG_LEVEL -lt 90 ]] && source ${dir_cfg}/${DEF_SCRIPT_BACKUP}
-  [[ $ret_code -ne 0 ]] && break_script ${ret_code} "${ret_message}"
+  # после выхода из скрипта $ret_code содержит код ошибки
+  # =0        - нет ошибки
+  # >0 && <11 - передать код $ret_code дальше вверх про стеку выполнения
+  # >10 - прервать выполнение скрипта и вывести сообщения из msg_arr[ret_code] и $ret_message
+  [[ $ret_code -ge 11 ]] && break_script ${ret_code} "${ret_message}"
+}
+
+#####################################################
+# Проверить существует ли контейнер
+# Вход:
+#     $1 - имя контейнера
+# Выход:
+#     =1 - контейнер существует
+#     =0 - контейнер не существует
+#####################################################
+is_exists_instance() {
+  [[ -z $1 ]] && return 0
+  ret=$(lxc info $1 2> /dev/null)
+  [[ $? -eq 0 ]] && return 1 || return 0
+}
+
+#####################################################
+# Вернуть состояние контейнера (STOPPED || RUNNING || NOT_EXESTS)
+# Вход:
+#     $1 - имя контейнера
+# Выход:
+#     =1 - контейнер существует
+#     =0 - контейнер не существует
+#####################################################
+state_instance() {
+  [[ -z $1 ]] && {
+    echo 'NOT_EXISTS'
+    return
+  }
+  ret=$(lxc info $1 2> /dev/null | grep 'Status:')
+  [[ $? -ne 0 ]] && {
+    echo 'NOT_EXISTS'
+    return
+  }
+  echo $ret | sed -n -e 's/Status:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+}
+
+is_running_instance() {
+  ret=$(state_instance $1)
+  [[ "$ret" == "RUNNING" ]] && echo "1" || echo ''
+}
+#####################################################
+# Экспорт контейнера
+#####################################################
+export_instance() {
+  debug "Экспорт контейнера ${CONTAINER_NAME}"
+  is_running=$(is_running_instance ${CONTAINER_NAME})
+  [[ $DEBUG_LEVEL -lt 90 ]] && [[ $is_running -eq 1 ]] && $lxc_cmd stop ${CONTAINER_NAME}
+  dir_exp=${where_copy}
+  [[ $DEBUG_LEVEL -lt 90 ]] && $lxc_cmd export ${CONTAINER_NAME} "$(last_char_dir ${where_copy})$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})-image-container.tar.gz"
+  [[ $DEBUG_LEVEL -lt 90 ]] && [[ $is_running -eq 1 ]] && $lxc_cmd start ${CONTAINER_NAME}
+  #lxc export ns /root/ns.tar.gz
 }
 
 last_char_dir() {
   [[ -z $1 ]] && {
-    echo $1
     return
   }
   s=${1}
   l=${#s}
   act=$2; act=${act:='add'}
-  ( [[ "${act}" == "add" ]] || [[ "${act}" == "del" ]] ) || act='add'
+  ( [[ "${act}" == "add" ]] || [[ "${act}" == "del" ]] || [[ "${act}" == "get" ]] ) || act='add'
   case "$act" in
     add)
       [[ "${s: -1}" != "/" ]] && s="${s}/"
@@ -169,13 +259,16 @@ last_char_dir() {
     del)
       [[ "${s: -1}" == "/" ]] && s="${s:0:$((l - 1))}"
       ;;
-    *) break_script ${ERR_BAD_ACTION_LASTCHAR_DIR}
+    get)
+      echo "${s: -1}"
+      ;;
+    *) break_script ${ERR_BAD_ACTION_LASTCHAR_DIR} ;;
   esac
   echo "${s}"
 }
 
-
 test_func_sh(){
+  DEBUG=1
   #echo $(get_part_from_container_name 'hhh:ccc' 'h')
   #echo $(get_part_from_container_name 'hhh:ccc')
 
@@ -188,6 +281,19 @@ test_func_sh(){
   #last_char_dir dir/1 del
   #last_char_dir dir/1/ del
   
+  #last_char_dir dir/1 get
+  #last_char_dir dir/1/ get
+
+  #state_instance lxd-dev:tst2
+  #state_instance lxd-dev:tst3
+  #state_instance lxd-dev:tst4
+
+  t=$(is_running_instance lxd-dev:tst2)
+  [[ "$t" == "1" ]] && echo RUNNING || echo HZ
+  [[ $(is_running_instance lxd-dev:tst3) == "1" ]] && echo RUNNING || echo HZ
+  [[ $(is_running_instance lxd-dev:tst4) == "1" ]] && echo RUNNING || echo HZ
+  #export_instance
+
   echo 123 > /dev/null;
 }
 
