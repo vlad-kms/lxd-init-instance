@@ -8,10 +8,12 @@
 #  #exit
 #fi
 
-lxc -q exec ${CONTAINER_NAME} -- tar -czf /root/pb-home.tar.gz --exclude=.git /root/1/1 /root/2/1
+#lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf /root/backup.tar.gz --exclude=.git /root/1/1 /root/2/1 > /dev/null 2>/dev/null"
+lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf /root/backup.tar.gz --exclude=.git /root/1/1 /root/2/1 2>&1 | grep -v  'Removing leading'"
+#lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf /root/backup.tar.gz -C /root/1/1 /root/2/1"
 ret_code=$?
 if [[ ret_code -eq 0 ]]; then
-  lxc file pull -q -p ${CONTAINER_NAME}/root/pb-home.tar.gz ${where_copy}
+  lxc file pull -q -p ${CONTAINER_NAME}/root/backup.tar.gz ${where_copy}
   ret_code=$?
   [ $ret_code -ne 0 ] && ret_message="Ошибка копирования данных"
 else

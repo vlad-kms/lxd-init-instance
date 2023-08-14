@@ -5,7 +5,7 @@ source global_vars.sh
 source func.sh
 #source func-tm.sh
 
-trap 'on_error' ERR
+#trap 'on_error' ERR
 
 unset SCRIPT_NAME
 
@@ -178,7 +178,7 @@ add_instance() {
 
 declare -a array_env
 
-args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:' -- "$@")
+args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:x' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:,export' -- "$@")
 set -- $args
 debug $args
 i=0
@@ -201,6 +201,7 @@ for i; do
         '-w' | '--where-copy')  arg_where_copy=${2};  shift 2;;
         '--use-name')           use_name=${2};        shift 2;;
         '--use-dir_cfg')        use_dir_cfg=${2};     shift 2;;
+        '-x' | '--export')      action="export";      shift 2;;
         else)                   help; exit 0          ;;
     esac
 done
@@ -328,7 +329,7 @@ where_copy=${where_copy:=${pref}${DEF_WHERE_COPY}}
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # добавить имя контейнера к пути бэкапа
-[ ${use_name} -ne 0 ] && where_copy=${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME})
+[ ${use_name} -ne 0 ] && where_copy="${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})"
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # ошибка, если файл существует и не является каталогом
@@ -394,12 +395,16 @@ case "$action" in
     ;;
   'backup') {
       echo "Action: backup data container"
-      backup_instance
+      backup_data_instance
+    }
+    ;;
+  'export') {
+      echo "Action: export container"
+      export_instance
     }
     ;;
   else )    {
       echo "Action: UNDEFINED"
-      exit
     }
     ;;
 esac
