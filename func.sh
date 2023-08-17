@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #source global_vars.sh
+source hook.sh
 
 help() {
   echo "
@@ -192,6 +193,29 @@ backup_data_instance() {
   [[ $ret_code -ge 11 ]] && break_script ${ret_code} "${ret_message}"
 }
 
+########################################
+# Проверить существование функции
+# Вход:
+#     $1  - имя функции для проверки
+# Выход:
+#     return 0    - если не существует
+#     echo "not"
+#     return 1    - если существует
+#     echo "exist"
+########################################
+is_exists_func() {
+  if [[ -z $1 ]]; then
+    echo "not"
+    return 0
+  fi
+  declare -F ${1} > /dev/null && {
+    echo "exists"
+    return 1
+  }
+  echo "no"
+  return 0
+}
+
 #####################################################
 # Проверить существует ли контейнер
 # Вход:
@@ -200,33 +224,38 @@ backup_data_instance() {
 #     =1 - контейнер существует
 #     =0 - контейнер не существует
 #####################################################
-is_exists_instance() {
-  [[ -z $1 ]] && return 0
-  ret=$(lxc info $1 2> /dev/null)
-  [[ $? -eq 0 ]] && return 1 || return 0
-}
+# TODO. Не тспользуется. Можно удалить.
+#is_exists_instance() {
+#  [[ -z $1 ]] && return 0
+#  ret=$(lxc info $1 2> /dev/null)
+#  [[ $? -eq 0 ]] && return 1 || return 0
+#}
 
 #####################################################
-# Вернуть состояние контейнера (STOPPED || RUNNING || NOT_EXESTS)
+# Вернуть состояние контейнера (STOPPED || RUNNING || NOT_EXISTS)
 # Вход:
 #     $1 - имя контейнера
 # Выход:
-#     =1 - контейнер существует
-#     =0 - контейнер не существует
+#     echo $state - состояние контейнера, (STOPPED || RUNNING || NOT_EXISTS)
+#     return 1 - контейнер существует
+#     return 0 - контейнер не существует
 #####################################################
 state_instance() {
   [[ -z $1 ]] && {
     echo 'NOT_EXISTS'
-    return
+    return 0
   }
   ret=$(lxc info $1 2> /dev/null | grep 'Status:')
   [[ $? -ne 0 ]] && {
     echo 'NOT_EXISTS'
-    return
+    return 0
   }
   echo $ret | sed -n -e 's/Status:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+  return 1
 }
 
+#####################################################
+#####################################################
 is_running_instance() {
   ret=$(state_instance $1)
   [[ "$ret" == "RUNNING" ]] && echo "1" || echo ''
@@ -237,11 +266,16 @@ is_running_instance() {
 export_instance() {
   debug "Экспорт контейнера ${CONTAINER_NAME}"
   is_running=$(is_running_instance ${CONTAINER_NAME})
-  [[ $DEBUG_LEVEL -lt 90 ]] && [[ $is_running -eq 1 ]] && $lxc_cmd stop ${CONTAINER_NAME}
-  dir_exp=${where_copy}
-  [[ $DEBUG_LEVEL -lt 90 ]] && $lxc_cmd export ${CONTAINER_NAME} "$(last_char_dir ${where_copy})$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})-image-container.tar.gz"
-  [[ $DEBUG_LEVEL -lt 90 ]] && [[ $is_running -eq 1 ]] && $lxc_cmd start ${CONTAINER_NAME}
+  # ловушка перед lxc stop и lxc export
+  hook_dispath 'hooks' 'before_export'
+
+  #[[ $DEBUG_LEVEL -lt 90 ]] && [[ $is_running -eq 1 ]] && $lxc_cmd stop ${CONTAINER_NAME}
+  #[[ $DEBUG_LEVEL -lt 90 ]] && $lxc_cmd export ${CONTAINER_NAME} "$(last_char_dir ${where_copy})$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})-image-container.tar.gz"
+  #[[ $DEBUG_LEVEL -lt 90 ]] && [[ $is_running -eq 1 ]] && $lxc_cmd start ${CONTAINER_NAME}
+
+  # ловушка после lxc export и lxc start
   #lxc export ns /root/ns.tar.gz
+  hook_dispath 'hooks' 'after_export'
 }
 
 last_char_dir() {
@@ -268,7 +302,6 @@ last_char_dir() {
 }
 
 test_func_sh(){
-  DEBUG=1
   #echo $(get_part_from_container_name 'hhh:ccc' 'h')
   #echo $(get_part_from_container_name 'hhh:ccc')
 
@@ -288,13 +321,28 @@ test_func_sh(){
   #state_instance lxd-dev:tst3
   #state_instance lxd-dev:tst4
 
-  t=$(is_running_instance lxd-dev:tst2)
-  [[ "$t" == "1" ]] && echo RUNNING || echo HZ
-  [[ $(is_running_instance lxd-dev:tst3) == "1" ]] && echo RUNNING || echo HZ
-  [[ $(is_running_instance lxd-dev:tst4) == "1" ]] && echo RUNNING || echo HZ
+  #t=$(is_running_instance lxd-dev:tst2)
+  #[[ "$t" == "1" ]] && echo RUNNING || echo HZ
+  #[[ $(is_running_instance lxd-dev:tst3) == "1" ]] && echo RUNNING || echo HZ
+  #[[ $(is_running_instance lxd-dev:tst4) == "1" ]] && echo RUNNING || echo HZ
+
+  CONTAINER_NAME=/lxd-dev:tst3
+  DEBUG_LEVEL=90
+  DEBUG=0
   #export_instance
 
-  echo 123 > /dev/null;
+  #echo $(is_exists_func test_func_sh)
+  #ret=$?
+  #echo $ret
+  #echo $(is_exists_func test_func_sh1)
+  #ret=$?
+  #echo $ret
+  #echo 123 > /dev/null;
+
+  dir_cfg='instances/tst3/'
+  hook_dispath "export"
+
+
 }
 
 #test_func_sh
