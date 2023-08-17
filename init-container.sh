@@ -3,6 +3,9 @@
 # подключение функций
 source global_vars.sh
 source func.sh
+
+source hook.sh
+
 #source func-tm.sh
 
 #trap 'on_error' ERR

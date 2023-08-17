@@ -1,6 +1,8 @@
 config:
   environment.EDITOR: mcedit
   environment.ENV: /etc/profile
+  raw.lxc: |
+    lxc.uts.name=tsttst3
   
   cloud-init.user-data: |
     #cloud-config
