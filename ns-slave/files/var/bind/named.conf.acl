@@ -3,6 +3,7 @@ acl "lan" {
     192.168.15.0/24; //local net
     192.168.16.0/24; //local net
     10.16.16.0/24;   // Wireguard VPN
+    10.16.17.0/24;   // Docker Mikrotik
     localhost;
 };
 acl "lan1" {
