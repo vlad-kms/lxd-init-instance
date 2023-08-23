@@ -17,10 +17,10 @@ unset SCRIPT_NAME
 ######################################################################################
 
 add_instance() {
-  ### если здесь анонимный инстанс, то запуск через lxc launch.
-  ### Сразу завершение скрипта, пропуская все остальные шаги
+  before_init_container=${before_init_container:='before_init_container'}
+  hook_dispath "${hooks_file}" "${before_init_container}"
   if [[ -n ${config_file} ]]; then
-    ### если есть файл config.yaml для инстанса
+    ### Есть файл config.yaml для инстанса
     if [[ -z $CONTAINER_NAME ]]; then
       ### здесь запуск анонимного инстанса
       debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}" . Затем сразу выход"
@@ -32,7 +32,7 @@ add_instance() {
       ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < "${config_file_render}"
     fi
   else
-    ### если нет файла config.yaml для инстанса
+    ### нет файла config.yaml для инстанса
     if [[ -z $CONTAINER_NAME ]]; then
       ### здесь запуск анонимного инстанса
       debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} . Затем сразу выход"
@@ -49,6 +49,8 @@ add_instance() {
   if [[ $ret -ne 0 ]]; then
     exit $ret
   fi
+  after_init_container=${after_init_container:='after_init_container'}
+  hook_dispath "${hooks_file}" "${after_init_container}"
   if [[ -z $CONTAINER_NAME ]]; then
     ### если имя контейнера пусто, то ошибка создания контейнера
     break_script ${ERR_CREATE_CONTAINER}
@@ -106,7 +108,7 @@ add_instance() {
     tmpfile=$(mktemp)
     find . -name "*" -type f -print | sed 's/^\.\///' > "${tmpfile}"
     ### создать дерево каталогов в подготовленных шаблонах аналогичное в шаблонах
-    cp -r * ${dtr}
+    cp -r --force * ${dtr}
     cat "${tmpfile}" | while read item
     do
       #debug "--- rendering template item: $item"
@@ -126,10 +128,12 @@ add_instance() {
   fi
 
   ### ловушка перед стартом инстанса
-  if [[ -n ${hook_beforestart} ]]; then
-    debug "=== Ловушка перед запуском инстанс: $hook_beforestart"
-    source ${hook_beforestart}
-  fi
+  hook_beforestart=${hook_beforestart:=$DEF_HOOK_BEFORESTART}
+  debug "=== Ловушка перед запуском инстанс: $hook_beforestart"
+  hook_dispath "${hooks_file}" "${hook_beforestart}"
+  #if [[ -n ${hook_beforestart} ]]; then
+  #  source ${hook_beforestart}
+  #fi
   ### Выход если ошибка при выполнении скрипта-ловушки перед запуском инстанса
   ret=$?
   if [[ $ret -ne 0 ]]; then
@@ -155,10 +159,13 @@ add_instance() {
   #${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
 
   ### ловушка после старта инстанса и завершения работы cloud-init
-  if [[ -n ${hook_afterstart} ]]; then
-    debug "=== Ловушка после запуска инстанс: $hook_afterstart"
-    source "${hook_afterstart}"
-  fi
+  hook_afterstart=${hook_afterstart:=$DEF_HOOK_AFTERSTART}
+  debug "=== Ловушка после запуска инстанс: $hook_afterstart"
+  hook_dispath "${hooks_file}" "${hook_afterstart}"
+  #if [[ -n ${hook_afterstart} ]]; then
+  #  debug "=== Ловушка после запуска инстанс: $hook_afterstart"
+  #  source "${hook_afterstart}"
+  #fi
   ### Выход если ошибка при выполнении скрипта-ловушки после запуском инстанса
   ret=$?
   if [[ $ret -ne 0 ]]; then
@@ -316,11 +323,12 @@ config_file="${dir_cfg}/${DEF_CFG_YAML}"
 }
 
 ### файл ловушки перед стартом инстанса
-hook_beforestart="${dir_cfg}/${DEF_HOOK_BEFORESTART}"
-[[ -f ${hook_beforestart} ]] || unset hook_beforestart
+hooks_file=${hooks_file:=$DEF_HOOKS_FILE}
+#hook_beforestart="${dir_cfg}/${DEF_HOOK_BEFORESTART}"
+#[[ -f ${hook_beforestart} ]] || unset hook_beforestart
 ### файл ловушки после старта инстанса
-hook_afterstart="${dir_cfg}/${DEF_HOOK_AFTERSTART}"
-[[ -f ${hook_afterstart} ]] || unset hook_afterstart
+#hook_afterstart="${dir_cfg}/${DEF_HOOK_AFTERSTART}"
+#[[ -f ${hook_afterstart} ]] || unset hook_afterstart
 ### файл скрипта, выполняемого при старте инстанса
 script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
@@ -354,6 +362,7 @@ debug "dir_cfg:------------ $dir_cfg"
 debug "config_file:-------- $config_file"
 debug "confgi_file_render:- $config_file_render"
 
+debug "hooks_file:--------- $hooks_file"
 debug "hook_afterstart:---- $hook_afterstart"
 debug "hook_beforestart:--- $hook_beforestart"
 debug "script_start:------- $script_start"
