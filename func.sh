@@ -267,7 +267,7 @@ export_instance() {
   debug "Экспорт контейнера ${CONTAINER_NAME}"
   is_running=$(is_running_instance ${CONTAINER_NAME})
   # ловушка перед lxc stop и lxc export
-  hook_dispath 'hooks' 'before_export'
+  hook_dispath "${hooks_file}" 'before_export'
 
   #[[ $DEBUG_LEVEL -lt 90 ]] && [[ $is_running -eq 1 ]] && $lxc_cmd stop ${CONTAINER_NAME}
   #[[ $DEBUG_LEVEL -lt 90 ]] && $lxc_cmd export ${CONTAINER_NAME} "$(last_char_dir ${where_copy})$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})-image-container.tar.gz"
@@ -275,7 +275,7 @@ export_instance() {
 
   # ловушка после lxc export и lxc start
   #lxc export ns /root/ns.tar.gz
-  hook_dispath 'hooks' 'after_export'
+  hook_dispath "${hooks_file}" 'after_export'
 }
 
 last_char_dir() {
@@ -329,6 +329,7 @@ test_func_sh(){
   CONTAINER_NAME=/lxd-dev:tst3
   DEBUG_LEVEL=90
   DEBUG=0
+  DEF_HOOKS_FILE=hooks
   #export_instance
 
   #echo $(is_exists_func test_func_sh)
@@ -341,6 +342,7 @@ test_func_sh(){
 
   dir_cfg='instances/tst3/'
   hook_dispath "export"
+  hook_dispath hooks "export"
 
 
 }

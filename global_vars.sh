@@ -53,6 +53,7 @@ DEF_HOOK_AFTERSTART=hook_afterstart.sh
 DEF_HOOK_BEFORESTART=hook_beforestart.sh
 DEF_HOOK_AFTERDELETE=hook_afterdelete.sh
 DEF_HOOK_BEFOREDELETE=hook_beforedelete.sh
+DEF_HOOKS_FILE='hooks'
 
 DEF_FIRST_SH=first.sh
 DEF_SCRIPT_BACKUP=backup.sh
@@ -62,6 +63,11 @@ NOT_BACKUP_BEFORE_DELETE=0
 
 use_name=1
 use_dir_cfg=0
+
+### имя файла с функциями-ловушками. При начальной обработке имя преобразуется в '_${hooks_file}.sh'
+### по-умолчанию - $DEF_HOOKS_FILE. Переопределять в локальном для инстанса файле vars.conf
+#hooks_file='hooks'
+
 
 item_msg_err() {
   [[ -z $1 ]] && i=$ERR_UNDEFINED || i=$1
