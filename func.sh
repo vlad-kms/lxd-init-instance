@@ -93,6 +93,7 @@ create_container() {
 on_error() {
   ([[ -n "${tmpfile}" ]]  && [[ -f "${tmpfile}" ]])  && rm "${tmpfile}"
   ([[ -n "${tmpfile1}" ]] && [[ -f "${tmpfile1}" ]]) && rm "${tmpfile1}"
+  ([[ -n "${dtr}" ]] && [[ -d "${dtr}" ]]) && rm -r "${dtr}"
   #exit 1
 }
 

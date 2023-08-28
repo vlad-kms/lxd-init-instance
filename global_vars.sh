@@ -68,7 +68,6 @@ use_dir_cfg=0
 ### по-умолчанию - $DEF_HOOKS_FILE. Переопределять в локальном для инстанса файле vars.conf
 #hooks_file='hooks'
 
-
 item_msg_err() {
   [[ -z $1 ]] && i=$ERR_UNDEFINED || i=$1
   eval echo ${msg_arr[${i}]}
