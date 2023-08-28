@@ -1,0 +1,57 @@
+#!/bin/sh
+
+avail_dir="/opt/dev/ext/sites-available"
+enabled="/opt/dev/ext/sites-enabled"
+
+avail_dir="/etc/nginx/sites-available"
+enabled="/etc/nginx/sites-enabled"
+
+site=$(ls ${avail_dir})
+
+([[ -d "${avail_dir}"  ]] && [[ -d "${enabled}" ]]) || {
+    echo "Error!! Folders ${avail_dir} & ${enabled} not found."
+    exit 0
+}
+[[ -z $1 ]] && {
+    echo "Error!!! Not available argument for config file site"
+    echo "Use script: n2en site_config"
+    echo -e "\nAvailable configs:\n$site"
+    exit 0
+}
+
+site_file="str"
+site_file="${1}"
+#avail="${avail_dir}/${site_file}"
+avail="${avail_dir}/$1"
+# проверить существование файла $1
+[[ ! -f ${avail} ]] && site_file="${1}.conf"
+avail="${avail_dir}/$1.conf"
+# проверить существование файла $1.conf
+[[ ! -f ${avail} ]] && {
+    echo "Error!!! Not available config file site"
+    echo "Use script: n2en site_config"
+    echo -e "\nAvailable configs:\n$site"
+    exit 0
+}
+
+if [ "$#" != "1" ]; then
+        echo "Use script: n2en site_config"
+        echo -e "\nAvailable configs:\n$site"
+        exit 0
+else
+    if test -e $avail; then
+	    ln -s $avail $enabled
+    else
+	    echo -e "$avail config does not exist! Please create one!\n$site"
+	    exit 0
+    fi
+    if test -e "${enabled}/${site_file}"; then
+	    echo "Success!!"
+	    echo "For test nginx config: sudo nginx -t"
+	    echo "Now reload nginx server: sudo systemctl reload nginx"
+    else
+	    #echo  -e "Config $avail does not exist!\nPlease see avail configs:\n$site"
+	    exit 0
+    fi
+fi
+exit 0

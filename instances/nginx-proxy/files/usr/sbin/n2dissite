@@ -1,0 +1,50 @@
+#!/bin/bash
+
+avail_dir="/opt/dev/ext/sites-available"
+enabled="/opt/dev/ext/sites-enabled"
+
+avail_dir="/etc/nginx/sites-available"
+enabled="/etc/nginx/sites-enabled"
+
+site=$(ls ${enabled})
+
+([[ -d "${avail_dir}"  ]] && [[ -d "${enabled}" ]]) || {
+    echo "Error!! Folders ${avail_dir} & ${enabled} not found."
+    exit 0
+}
+
+#enabled=/etc/nginx/sites-enabled
+#site=`ls /etc/nginx/sites-enabled`
+
+avail="${enabled}/$1"
+# проверить существование файла $1
+[[ ! -f ${avail} ]] && site_file="${1}.conf"
+avail="${enabled}/$1.conf"
+# проверить существование файла $1.conf
+[[ ! -f ${avail} ]] && {
+    echo "Error!!! Not available config file site"
+    echo "Use script: n2d site_config"
+    echo -e "\nAvailable configs:\n$site"
+    exit 0
+}
+
+
+if [ "$#" != "1" ]; then
+    echo "Use script: n2dissite site_config"
+    echo -e "\nEnabled configs: \n$site"
+    exit 0
+else
+    if test -e $avail; then
+	    rm  $avail
+    else
+    	echo -e "$avail config does not exist! Exiting"
+	    exit 0
+    fi
+    if test -e $enabled/$1.conf; then
+    	echo "Error!! Could not remove $avail config!"
+    else
+	    echo  -e "Success! $avail has been removed!\nsudo systemctl reload nginx"
+        exit 0
+    fi
+fi
+exit 0
