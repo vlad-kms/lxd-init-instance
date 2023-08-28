@@ -11,6 +11,7 @@ config:
       - openssh
       - curl
       - openssl
+      - socat
     manage_resolv_conf: true
     resolv_conf:
       nameservers:

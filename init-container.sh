@@ -8,7 +8,7 @@ source hook.sh
 
 #source func-tm.sh
 
-#trap 'on_error' ERR
+trap 'on_error' ERR
 
 unset SCRIPT_NAME
 
@@ -18,6 +18,7 @@ unset SCRIPT_NAME
 
 add_instance() {
   before_init_container=${before_init_container:='before_init_container'}
+  debug "=== Ловушка перед инициализацией инстанса: $before_init_container"
   hook_dispath "${hooks_file}" "${before_init_container}"
   if [[ -n ${config_file} ]]; then
     ### Есть файл config.yaml для инстанса
@@ -50,6 +51,7 @@ add_instance() {
     exit $ret
   fi
   after_init_container=${after_init_container:='after_init_container'}
+  debug "=== Ловушка перед инициализацией инстанса: $after_init_container"
   hook_dispath "${hooks_file}" "${after_init_container}"
   if [[ -z $CONTAINER_NAME ]]; then
     ### если имя контейнера пусто, то ошибка создания контейнера
@@ -179,7 +181,7 @@ add_instance() {
   fi
 
   ### если требуется перезапуск, то выполнить его
-  [ "$AUTO_RESTART_FINAL" -ne 0 ] && restart_instance
+  [ "$AUTO_RESTART_FINAL" -ne "0" ] && restart_instance
 }
 
 ####################################################################################
@@ -421,5 +423,8 @@ case "$action" in
     ;;
 esac
 
+[[ "$DEBUG" -eq "0" ]] && on_error
+
 echo -e "\nContainer alias: ${CONTAINER_NAME}"
 echo "${CONTAINER_NAME}"
+
