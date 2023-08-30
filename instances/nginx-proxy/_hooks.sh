@@ -16,18 +16,19 @@ after_start() {
   HOME_ACME="/root/.acme.sh"
   #
   CERT_NAME="av.t.mrovo.ru"
+  CERT_NAME="av1.t.mrovo.ru"
   DOMAINS="-d ${CERT_NAME}"
   # провайдер acme ssl
   $cmd ${HOME_ACME}/acme.sh --set-default-ca --server ${DEFAULT_SSL_PROV}
     # получить первый раз сертификат
   rcf=${REQUEST_CERTIFICATE_FIRST:="1"}
   if [[ "$REQUEST_CERTIFICATE_FIRST" -ne "0" ]]; then
-    $cmd sh -c "export SL_Key=${SL_KEY} && ${HOME_ACME}/acme.sh --issue --dns dns_selectel ${DOMAINS}" ### > /dev/null"
+    $cmd sh -c "export SL_Key=${SL_KEY} && ${HOME_ACME}/acme.sh --issue --force --dns dns_selectel ${DOMAINS}" ### > /dev/null"
   fi
     # установка сертификата для nginx
   rcmd=${RELOAD_CMD:="systemctl -f reload nginx"}
   scmd=${START_CMD:="systemctl start nginx"}
   rscmd=${RESTART_CMD:="systemctl restart nginx"}
-  $cmd ${HOME_ACME}/acme.sh --install-cert -d ${CERT_NAME} --key-file /etc/nginx/snippets/certs/key.pem --fullchain-file /etc/nginx/snippets/certs/${CERT_NAME}/cert.pem --reloadcmd "${rcmd}"
-
+  $cmd sh -c "[[ -d /etc/nginx/snippets/certs/${CERT_NAME} ]] || mkdir -p /etc/nginx/snippets/certs/${CERT_NAME}"
+  $cmd ${HOME_ACME}/acme.sh --install-cert -d ${CERT_NAME} --key-file /etc/nginx/snippets/certs/${CERT_NAME}/key.pem --fullchain-file /etc/nginx/snippets/certs/${CERT_NAME}/cert.pem --reloadcmd "${rcmd}"
 }

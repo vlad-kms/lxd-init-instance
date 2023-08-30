@@ -8,7 +8,7 @@ source hook.sh
 
 #source func-tm.sh
 
-#trap 'on_error' ERR
+trap 'on_error' ERR
 
 unset SCRIPT_NAME
 
@@ -423,5 +423,8 @@ case "$action" in
     ;;
 esac
 
+[[ "$DEBUG" -eq "0" ]] && on_error
+
 echo -e "\nContainer alias: ${CONTAINER_NAME}"
 echo "${CONTAINER_NAME}"
+
