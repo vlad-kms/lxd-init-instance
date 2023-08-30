@@ -15,7 +15,8 @@ after_start() {
   $cmd sh -c "curl -s https://get.acme.sh | sh -s email=9141778236@mail.ru > /dev/null"
   HOME_ACME="/root/.acme.sh"
   #
-  #CERT_NAME="av.t.mrovo.ru"
+  CERT_NAME="av.t.mrovo.ru"
+  CERT_NAME="av1.t.mrovo.ru"
   DOMAINS="-d ${CERT_NAME}"
   # провайдер acme ssl
   $cmd ${HOME_ACME}/acme.sh --set-default-ca --server ${DEFAULT_SSL_PROV}
@@ -30,5 +31,4 @@ after_start() {
   rscmd=${RESTART_CMD:="systemctl restart nginx"}
   $cmd sh -c "[[ -d /etc/nginx/snippets/certs/${CERT_NAME} ]] || mkdir -p /etc/nginx/snippets/certs/${CERT_NAME}"
   $cmd ${HOME_ACME}/acme.sh --install-cert -d ${CERT_NAME} --key-file /etc/nginx/snippets/certs/${CERT_NAME}/key.pem --fullchain-file /etc/nginx/snippets/certs/${CERT_NAME}/cert.pem --reloadcmd "${rcmd}"
-
 }
