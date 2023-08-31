@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# подключение функций
-source global_vars.sh
+# подключение функций и глобальных переменных
+source ./functions/global_vars.sh
 source func.sh
 
-source hook.sh
+#source hook.sh
 
 #source func-tm.sh
 
@@ -15,174 +15,6 @@ unset SCRIPT_NAME
 ######################################################################################
 # ФУНКЦИИ
 ######################################################################################
-
-add_instance() {
-  before_init_container=${before_init_container:='before_init_container'}
-  debug "=== Ловушка перед инициализацией инстанса: $before_init_container"
-  hook_dispath "${hooks_file}" "${before_init_container}"
-  if [[ -n ${config_file} ]]; then
-    ### Есть файл config.yaml для инстанса
-    if [[ -z $CONTAINER_NAME ]]; then
-      ### здесь запуск анонимного инстанса
-      debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}" . Затем сразу выход"
-      #${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}"
-      CONTAINER_NAME=$(create_container ${IMAGE_NAME} ${config_file_render})
-    else
-      ### Инициализация инстанса
-      debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < ${config_file_render}"
-      ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < "${config_file_render}"
-    fi
-  else
-    ### нет файла config.yaml для инстанса
-    if [[ -z $CONTAINER_NAME ]]; then
-      ### здесь запуск анонимного инстанса
-      debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} . Затем сразу выход"
-      #${lxc_cmd} launch ${IMAGE_NAME}
-      CONTAINER_NAME=$(create_container ${IMAGE_NAME})
-    else
-      ### Инициализация инстанса
-      debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}"
-      ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}
-    fi
-  fi
-  ### Выход если ошибка инициализации инстанса
-  ret=$?
-  if [[ $ret -ne 0 ]]; then
-    exit $ret
-  fi
-  after_init_container=${after_init_container:='after_init_container'}
-  debug "=== Ловушка перед инициализацией инстанса: $after_init_container"
-  hook_dispath "${hooks_file}" "${after_init_container}"
-  if [[ -z $CONTAINER_NAME ]]; then
-    ### если имя контейнера пусто, то ошибка создания контейнера
-    break_script ${ERR_CREATE_CONTAINER}
-  fi
-
-  ### если есть скрипт, который надо выполнить при первом запуске,
-  ### то скопировать его в созданный инстансе /run/start/#SCRIPT_NAME
-  if [[ -n ${script_start} ]]; then
-    ### что-то сделать до запуска контейнера
-    dst=/opt/start/script.sh
-    debug "--- Копирование скрипта: ${lxc_cmd} file push ${script_start} ${CONTAINER_NAME}${dst}"
-    ${lxc_cmd} file push -p --mode 0755 $script_start $CONTAINER_NAME$dst
-    ### Выход если ошибка копирования скрипта запуска
-    ret=$?
-    if [[ $ret -ne 0 ]]; then
-      exit $ret
-    fi
-  fi
-
-  ### если есть каталог $DEF_FILES в каталоге с конфигурационными файлами,
-  ### то скопировать из него все файлы (каталоги) в инстанс
-  if [[ -d "${dir_cfg}/${DEF_FILES}" ]]; then
-    debug "--- Работа с файлами"
-    op=$(pwd)
-    cd "${dir_cfg}/${DEF_FILES}"
-    find . -name "*" -type f -print0 | xargs -I {} -r0 ${lxc_cmd} file push -p {} "${CONTAINER_NAME}/{}"
-    ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
-    ret=$?
-    cd $op
-    if [[ $ret -ne 0 ]]; then
-      exit $ret
-    fi
-  fi
-
-  ### если есть каталог $DEF_FILES_TMPL в каталоге с конфигурационными файлами,
-  ### то скопировать из него все файлы (каталоги) в инстанс, предварительно шаблонизировав
-  ### с помощью eval
-  #DEF_FILES_TMPL=files_tm папка с шаблонами
-  #DEF_FILES_TMPL_RENDER=files_tmpl_render папка с рендериными файлами
-  if [[ -d "${dir_cfg}/${DEF_FILES_TMPL}" ]]; then
-    debug "--- Работа с шаблонами"
-    op=$(pwd)
-    ### имя каталога для рендерованных шаблонов
-    dtr="${op}/${dir_cfg}/${DEF_FILES_TMPL_RENDER}"
-    debug "--- dtr: $dtr"
-    if [[ -f $dtr ]]; then
-      ### не является каталогом, ошибка 103
-      item_msg_err ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
-      exit ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
-    fi
-    ### нет каталога, создать его
-    [[ ! -d "${dtr}" ]] && mkdir "${dtr}"
-
-    cd "${dir_cfg}/${DEF_FILES_TMPL}"
-    tmpfile=$(mktemp)
-    find . -name "*" -type f -print | sed 's/^\.\///' > "${tmpfile}"
-    ### создать дерево каталогов в подготовленных шаблонах аналогичное в шаблонах
-    cp -r --force * ${dtr}
-    cat "${tmpfile}" | while read item
-    do
-      #debug "--- rendering template item: $item"
-      template_render $item > "${dtr}/$item"
-    done
-    rm "${tmpfile}"
-    ### копировать файлы рендерированных шаблонов
-    cd $dtr
-    find . -name "*" -type f -print0 | xargs -I {} -r0 ${lxc_cmd} file push -p {} "${CONTAINER_NAME}/{}"
-    
-    ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
-    ret=$?
-    cd $op
-    if [[ $ret -ne 0 ]]; then
-      exit $ret
-    fi
-  fi
-
-  ### ловушка перед стартом инстанса
-  hook_beforestart=${hook_beforestart:=$DEF_HOOK_BEFORESTART}
-  debug "=== Ловушка перед запуском инстанс: $hook_beforestart"
-  hook_dispath "${hooks_file}" "${hook_beforestart}"
-  #if [[ -n ${hook_beforestart} ]]; then
-  #  source ${hook_beforestart}
-  #fi
-  ### Выход если ошибка при выполнении скрипта-ловушки перед запуском инстанса
-  ret=$?
-  if [[ $ret -ne 0 ]]; then
-    debug "=== Ошибка после запуска скрипта-ловушки ПередЗапуском"
-    exit $ret
-  fi
-
-  ### СТАРТ
-  debug "--- Старт инстанс $CONTAINER_NAME"
-  ${lxc_cmd} start $CONTAINER_NAME
-  ### Выход если ошибка запуска инстанса $CONTAINER_NAME
-  ret=$?
-  if [[ $ret -ne 0 ]]; then
-    exit $ret
-  fi
-
-  ### Если существует cloud-init, то ожидать пока cloud-init завершит работу (статус == done)
-  if [[ ${DEBUG} -eq 0 ]]; then
-    ss=$(${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait")
-  else
-    ${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
-  fi
-  #${lxc_cmd} exec ${CONTAINER_NAME} -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
-
-  ### ловушка после старта инстанса и завершения работы cloud-init
-  hook_afterstart=${hook_afterstart:=$DEF_HOOK_AFTERSTART}
-  debug "=== Ловушка после запуска инстанс: $hook_afterstart"
-  hook_dispath "${hooks_file}" "${hook_afterstart}"
-  #if [[ -n ${hook_afterstart} ]]; then
-  #  debug "=== Ловушка после запуска инстанс: $hook_afterstart"
-  #  source "${hook_afterstart}"
-  #fi
-  ### Выход если ошибка при выполнении скрипта-ловушки после запуском инстанса
-  ret=$?
-  if [[ $ret -ne 0 ]]; then
-    exit $ret
-  fi
-
-  ### скрипт после запуска инстанса, выполняемый внутри контейнера
-  if [[ -n ${script_start} ]]; then
-    debug "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
-    ${lxc_cmd} exec $CONTAINER_NAME -- sh -c ". ${dst}"
-  fi
-
-  ### если требуется перезапуск, то выполнить его
-  [ "$AUTO_RESTART_FINAL" -ne "0" ] && restart_instance
-}
 
 ####################################################################################
 # СКРИПТ
@@ -213,7 +45,7 @@ for i; do
         '-w' | '--where-copy')  arg_where_copy=${2};  shift 2;;
         '--use-name')           use_name=${2};        shift 2;;
         '--use-dir_cfg')        use_dir_cfg=${2};     shift 2;;
-        '-x' | '--export')      action="export";      shift 2;;
+        '-x' | '--export')      action="export";      shift;;
         else)                   help; exit 0          ;;
     esac
 done
@@ -310,7 +142,8 @@ done
 
 ### инитиализация имен файлов конфига, скриптов презапуска, запуска, послезапуска для контейнера
 ### файл конфигурации
-config_file="${dir_cfg}/${DEF_CFG_YAML}"
+#$(last_char_dir ${dir_cfg})
+config_file="$(last_char_dir ${dir_cfg})${DEF_CFG_YAML}"
 ### если файла нет, то очистить переменную. Нет конфига
 [[ -f ${config_file} ]] || unset config_file
 ### если файл cfg есть, то инит confgi_file_render,
@@ -398,22 +231,26 @@ template_render "$config_file" > "$config_file_render"
 
 case "$action" in
   'add')    {
-      echo "Action: add container"
+      debug "Action: add container"
+      source ./functions/add.sh
       add_instance
     }
     ;;
   'delete') {
-      echo "Action: delete container"
+      debug "Action: delete container"
+      source ./functions/delete.sh
       delete_instance
     }
     ;;
   'backup') {
-      echo "Action: backup data container"
+      debug "Action: backup data container"
+      source ./functions/backup.sh
       backup_data_instance
     }
     ;;
   'export') {
-      echo "Action: export container"
+      debug "Action: export container"
+      source ./functions/export.sh
       export_instance
     }
     ;;
