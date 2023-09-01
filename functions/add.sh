@@ -103,8 +103,7 @@ add_instance() {
     debug "--- dtr: $dtr"
     if [[ -f $dtr ]]; then
       ### не является каталогом, ошибка 103
-      item_msg_err ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
-      exit ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
+      break_script ${ERR_RENDER_TEMPLATE_NOT_CATALOG}
     fi
     ### нет каталога, создать его
     [[ ! -d "${dtr}" ]] && mkdir "${dtr}"
