@@ -11,6 +11,7 @@ source hook.sh
 trap 'on_error' ERR
 
 unset SCRIPT_NAME
+pass_file=''
 
 ####################################################################################
 # СКРИПТ
@@ -35,6 +36,7 @@ for i; do
         '-h' | '--help')        help; exit 0          ;;
         '-i' | '--image')       arg_image_name=${2};  shift 2;;
         '-n' | '--not-backup')  NOT_BACKUP_BEFORE_DELETE=1; shift;;
+        '-p' | '--pass_file'    pass_file=${2};       shift 2;; 
         '-t' | '--timeout')     TIMEOUT=${2};         shift 2;;
         '-u' | '--vaults')      VAULTS_NAME=${2};     shift 2;;
         '-v' | '--vars')        VARS_NAME=${2};       shift 2;;
@@ -48,6 +50,9 @@ done
 ### --timeout, по-умолчанию = 60 сек
 TIMEOUT=${TIMEOUT:=60}
 action=${action:="add"}
+
+### --pass_file (-p) начальная инициализация cipher шифрования
+init_cipher $pass_file
 
 ### Подготовка командной строки в зависимости от ключа --debug
 if [ "${DEBUG}" -eq 0 ]; then
