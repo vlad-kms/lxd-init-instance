@@ -1,25 +1,45 @@
 #!/bin/bash
 
+trap clear_working EXIT
+#trap on_error ERR
+
 # подключение функций и глобальных переменных
 source ./functions/global_vars.sh
 source ./functions/common.sh
-source hook.sh
+source ./functions/cipher.sh
 
-#source func.sh
+#source ./functions/hook.sh
+
 #source func-tm.sh
 
-trap 'on_error' ERR
 
-unset SCRIPT_NAME
-pass_file=''
+#unset SCRIPT_NAME
+
+#############################################
+# обработка ошибок
+#############################################
+clear_working() {
+  ([[ -n "${tmpfile}" ]]  && [[ -f "${tmpfile}" ]])  && rm "${tmpfile}"
+  ([[ -n "${tmpfile1}" ]] && [[ -f "${tmpfile1}" ]]) && rm "${tmpfile1}"
+  ([[ -n "${dtr}" ]] && [[ -d "${dtr}" ]]) && rm -r "${dtr}"
+}
+
+on_error() {
+  clear_working
+  exit 1
+}
 
 ####################################################################################
 # СКРИПТ
 ####################################################################################
 
+#a=( 6/2 )
+#echo $a
+#exit
+
 declare -a array_env
 
-args=$(getopt -u -o 'a:bc:de:hi:nt:u:v:w:x' --long 'add,alias:,backup,config-dir:,debug,delete,env:,help,image:,not-backup,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:,export' -- "$@")
+args=$(getopt -u -o 'a:bc:de:hi:nt:p:u:v:w:x' --long 'add,alias:,backup,config-dir:,cipher-file-dir:,cipher-file-name:,encode-file,decode-file,debug,delete,env:,help,image:,not-backup,pass-file:,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:,export' -- "$@")
 set -- $args
 debug $args
 i=0
@@ -29,14 +49,18 @@ for i; do
         '-a' | '--alias')       CONTAINER_NAME=${2};  shift 2;;
         '-b' | '--backup')      action="backup";      shift;;
         '-c' | '--config-dir')  CONFIG_DIR_NAME=${2}; shift 2;;
+        '--cipher-file-dir')    cipher_file_dir=${2}; shift 2;;
+        '--cipher-file-name')   cipher_file_name=${2};shift 2;;
         '-d' | '--delete')      action="delete";      shift;;
         '--debug')              DEBUG=1;              shift;;
         '--debug-level')        DEBUG_LEVEL=$2;       shift 2;;
+        '--decode-file')        action='dec_file';      shift;;
+        '--encode-file')        action='enc_file';    shift;;
         '-e' | '--env')         array_env+=( $2 );    shift 2;;
         '-h' | '--help')        help; exit 0          ;;
         '-i' | '--image')       arg_image_name=${2};  shift 2;;
         '-n' | '--not-backup')  NOT_BACKUP_BEFORE_DELETE=1; shift;;
-        '-p' | '--pass_file'    pass_file=${2};       shift 2;; 
+        '-p' | '--pass_file')   pass_file=${2};       shift 2;; 
         '-t' | '--timeout')     TIMEOUT=${2};         shift 2;;
         '-u' | '--vaults')      VAULTS_NAME=${2};     shift 2;;
         '-v' | '--vars')        VARS_NAME=${2};       shift 2;;
@@ -52,7 +76,10 @@ TIMEOUT=${TIMEOUT:=60}
 action=${action:="add"}
 
 ### --pass_file (-p) начальная инициализация cipher шифрования
-init_cipher $pass_file
+#init_cipher $pass_file
+init_cipher
+cipher_file_dir=${cipher_file_dir:=${DEF_CIPHER_FILE_DIR}}
+cipher_file_name=${cipher_file_name:=${DEF_CIPHER_FILE_NAME}}
 
 ### Подготовка командной строки в зависимости от ключа --debug
 if [ "${DEBUG}" -eq 0 ]; then
@@ -255,14 +282,36 @@ case "$action" in
       export_instance
     }
     ;;
+  'dec_file') {
+      echo "Action: dec_file"
+      if [[ "${cipher_file_name}" == "${DEF_CIPHER_FILE_NAME}" ]]; then
+        cipher_file_name="${cipher_file_name}-enc"
+      fi
+      arr_files=$(find ${cipher_file_dir} -type f -name ${cipher_file_name})
+      for item in ${arr_files[*]}; do
+        decode_file "${item}" "${item::-4}";
+        echo $item
+      done
+    }
+    ;;
+  'enc_file') {
+      echo "Action: enc_file"
+      arr_files=$(find ${cipher_file_dir} -type f -name ${cipher_file_name})
+      for item in ${arr_files[*]}; do
+        encode_file "${item}" "${item}-enc";
+        #echo $item
+      done
+    }
+    ;;
   else )    {
       echo "Action: UNDEFINED"
     }
     ;;
 esac
 
-[[ "$DEBUG" -eq "0" ]] && on_error
-
 echo -e "\nContainer alias: ${CONTAINER_NAME}"
 echo "${CONTAINER_NAME}"
+
+#[[ "$DEBUG" -eq "0" ]] && clear_working
+
 
