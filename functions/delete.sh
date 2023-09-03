@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ./functions/hook.sh
+
 delete_instance() {
 ### Удаление контейнера
   ### делаем backup контейнера, если $NOT_BACKUP_BEFORE_DELETE ==0

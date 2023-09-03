@@ -59,10 +59,15 @@ DEF_FIRST_SH=first.sh
 DEF_SCRIPT_BACKUP=backup.sh
 DEF_WHERE_COPY=backup
 
+DEF_CIPHER_FILE_DIR='./'
+DEF_CIPHER_FILE_NAME='*.vault'
+
 NOT_BACKUP_BEFORE_DELETE=0
 
 use_name=1
 use_dir_cfg=0
+pass_file=''
+
 
 ### имя файла с функциями-ловушками. При начальной обработке имя преобразуется в '_${hooks_file}.sh'
 ### по-умолчанию - $DEF_HOOKS_FILE. Переопределять в локальном для инстанса файле vars.conf
