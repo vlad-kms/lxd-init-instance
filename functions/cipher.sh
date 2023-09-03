@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source ./functions/common.sh
 source ./functions/global_vars.sh
+#source ./functions/common.sh
 
 # Используется шифрование и какой провайдер:
 #   =0, шифрование не используется, и не нашли openssl и gpg
@@ -9,8 +9,8 @@ source ./functions/global_vars.sh
 #   =2, шифрование используется, провайдер gpg - НЕ РАБОТАЕТ, не используется
 #   другое, шифрование не используется
 USE_CIPHER=0
-CIPHER_PASSWORD_DIR="./secrets"
-CIPHER_PASSWORD_FILE="cipher_pass"
+DEF_CIPHER_PASSWORD_DIR="./secrets"
+DEF_CIPHER_PASSWORD_FILE="cipher_pass"
 
 not_provider() {
     USE_CIPHER=0
@@ -33,17 +33,16 @@ not_provider() {
 ############################################################
 init_cipher() {
     local gitig='.gitignore'
-    file_pass=${file_pass:=${CIPHER_PASSWORD_DIR}/${CIPHER_PASSWORD_FILE}}
-    [[ -f $file_pass ]] || file_pass=${CIPHER_PASSWORD_DIR}/${file_pass}
-    [[ -f $file_pass ]] || file_pass=${CIPHER_PASSWORD_DIR}/${CIPHER_PASSWORD_FILE}
+    file_pass=${file_pass:=${DEF_CIPHER_PASSWORD_DIR}/${DEF_CIPHER_PASSWORD_FILE}}
+    [[ -f $file_pass ]] || file_pass=${DEF_CIPHER_PASSWORD_DIR}/${file_pass}
+    [[ -f $file_pass ]] || file_pass=${DEF_CIPHER_PASSWORD_DIR}/${DEF_CIPHER_PASSWORD_FILE}
     [[ -f $file_pass ]] || {
-        echo "Нет файла пароля"
+        echo "Нет файла пароля" 1>&2
         not_provider
         return 0
     }
     if [[ -x /bin/openssl ]]; then
         # провайдер openssl
-        
         USE_CIPHER=1
         CIPHER_CMD='openssl enc'
         CIPHER_ALGO='-camellia256'
@@ -64,7 +63,7 @@ init_cipher() {
     #    CIPHER_CMD_ENCODE=''
     #    CIPHER_CMD_DECODE=''
     else
-        echo "Не установлен пакет openssl. Поэтому шифрование не будет использоваться"
+        echo "Не установлен пакет openssl. Поэтому шифрование не будет использоваться" 1>&2
         not_provider
     fi
     return 0
@@ -79,11 +78,11 @@ init_cipher() {
 ##################################################
 encode_str() {
     [[ "$USE_CIPHER" == "0" ]] && {
-        deb "Не инициализировали библиотеку шифрования, или она не установлена в системе"
+        echo "Не инициализировали библиотеку шифрования, или она не установлена в системе" 1>&2
         return
     }
     [[ -z $1 ]] && {
-        deb "Нет строки для шифрования"
+        echo "Нет строки для шифрования" 1>&2
         return
     }
     if [[ -z $2 ]]; then
@@ -105,11 +104,11 @@ encode_str() {
 ##################################################
 decode_str() {
     [[ "$USE_CIPHER" == "0" ]] && {
-        deb "Не инициализировали библиотеку шифрования, или она не установлена в системе"
+        echo "Не инициализировали библиотеку шифрования, или она не установлена в системе" 1>&2
         return
     }
     [[ -z $1 ]] && {
-        deb "Нет строки для расшифрования"
+        echo "Нет строки для расшифрования" 1>&2
         return
     }
     if [[ -z $2 ]]; then
@@ -119,7 +118,6 @@ decode_str() {
     fi
     enc_str=$(echo $1 | ${CIPHER_CMD} ${CIPHER_DECODE} ${CIPHER_ALGO} ${CIPHER_SALT} ${CIPHER_BASE64} ${CIPHER_PBKDF2} -k $pw)
     echo $enc_str
-    echo
 }
 
 ##################################################
@@ -133,15 +131,15 @@ decode_str() {
 ##################################################
 encode_file() {
     [[ "$USE_CIPHER" == "0" ]] && {
-        deb "Не инициализировали библиотеку шифрования, или она не установлена в системе"
+        echo "Не инициализировали библиотеку шифрования, или она не установлена в системе" 1>&2
         return
     }
     [[ -f $1 ]] || {
-        deb "Нет файла для шифрования"
+        echo "Нет файла для шифрования" 1>&2
         return
     }
     ([[ -e $2 ]] && [[ ! -f $2 ]]) && {
-        deb "Невозможно записать зашифрованный файл"
+        echo "Невозможно записать зашифрованный файл" 1>&2
         return
     }
     if [[ -z $3 ]]; then
@@ -163,15 +161,15 @@ encode_file() {
 ##################################################
 decode_file() {
     [[ "$USE_CIPHER" == "0" ]] && {
-        deb "Не инициализировали библиотеку шифрования, или она не установлена в системе"
+        echo "Не инициализировали библиотеку шифрования, или она не установлена в системе" 1>&2
         return
     }
     [[ -f $1 ]] || {
-        deb "Нет файла для шифрования"
+        echo "Нет файла для шифрования" 1>&2
         return
     }
     ([[ -e $2 ]] && [[ ! -f $2 ]]) && {
-        deb "Невозможно записать зашифрованный файл"
+        echo "Невозможно записать зашифрованный файл" 1>&2
         return
     }
     if [[ -z $3 ]]; then
@@ -187,8 +185,9 @@ decode_file() {
 ##################################################
 get_password_key() {
     [[ -f $file_pass ]] || {
-        deb "Не указан пароль"
+        echo "Не указан пароль" 1>&2
         echo ''
+        return 0
     }
     echo $(sed -n '1p' $file_pass)
 }
@@ -197,6 +196,8 @@ get_password_key() {
 #####################################################
 #####################################################
 test_cipher() {
+    source ./functions/global_vars.sh
+    source ./functions/common.sh
     DEBUG=1
     file_pass="pw.vault"
 
