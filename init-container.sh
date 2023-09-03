@@ -290,7 +290,7 @@ case "$action" in
       arr_files=$(find ${cipher_file_dir} -type f -name ${cipher_file_name})
       for item in ${arr_files[*]}; do
         decode_file "${item}" "${item::-4}";
-        echo $item
+        debug $item
       done
     }
     ;;
@@ -299,7 +299,7 @@ case "$action" in
       arr_files=$(find ${cipher_file_dir} -type f -name ${cipher_file_name})
       for item in ${arr_files[*]}; do
         encode_file "${item}" "${item}-enc";
-        #echo $item
+        debug $item
       done
     }
     ;;
