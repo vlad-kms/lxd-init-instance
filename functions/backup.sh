@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ./functions/hook.sh
+
 backup_data_instance() {
   ### делаем backup контейнера
   ret_code=0
