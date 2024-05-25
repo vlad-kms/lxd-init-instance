@@ -16,8 +16,8 @@ help() {
     -d, --delete                - действие 'delete', удалить контейнер
         --debug                 - выводить отладочную информацию
         --debug-level Number    - уровень отладочной информации
-        --decode-file           - дешифровать файл "FileName-enc" и сохранить в "FileName"
-        --encode-file           - шифровать файл "FileName" и сохранить в "FileName-enc"
+        --decode-file           - дешифровать файл \"FileName-enc\" и сохранить в \"FileName\"
+        --encode-file           - шифровать файл \"FileName\" и сохранить в \"FileName-enc\"
     -e, --env EnvName=EnvValue  - значения для переопределния переменных в файлах конфигурации
     -h, --help                  - вызов справки
     -i, --image InageName       - образ, с которого создать контейнер
@@ -27,9 +27,9 @@ help() {
     -u, --vaults FileName       - файл со значениями секретных переменных для сборки контейнера, которые не хранятся в git
     -v, --vars FileName         - файл со значениями переменных для сборки контейнера, которые хранятся в git
     -w, --where-copy DirName    - куда сделать бэкап данных из контейнера
-    --use-name Number           - <>0 - добавлять в конце к каталогу $where_copy имя контейнера
+    --use-name Number           - <>0 - добавлять в конце к каталогу where_copy имя контейнера
                                   иначе не добавлять. По-умолчанию = 1
-    --use-dir_cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY $dir_cfg, т.е. каталог будет ($dir_cfg/$DEF_WHERE_COPY),
+    --use-dir_cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY dir_cfg, т.е. каталог будет dir_cfg/DEF_WHERE_COPY),
                                   иначе не добавлять. По-умолчанию = 0
     -x, --export                - экспорт образ контейнера
   "
@@ -50,9 +50,9 @@ debug() {
 #     $2 - дополнительная строка для вывода
 ########################################
 break_script() {
-  item_msg_err $1
-  [[ -z $2 ]] || echo $2
-  exit $1
+  item_msg_err "$1"
+  [[ -z $2 ]] || echo "$2"
+  exit "$1"
 }
 
 #####################################################
@@ -84,12 +84,12 @@ state_instance() {
     echo 'NOT_EXISTS'
     return 0
   }
-  ret=$(lxc info $1 2> /dev/null | grep 'Status:')
+  ret=$(lxc info "$1" 2> /dev/null | grep 'Status:')
   [[ $? -ne 0 ]] && {
     echo 'NOT_EXISTS'
     return 0
   }
-  echo $ret | sed -n -e 's/Status:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+  echo "$ret" | sed -n -e 's/Status:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   return 1
 }
 
@@ -102,7 +102,7 @@ state_instance() {
 #     echo ""  - контейнер не запущен
 #####################################################
 is_running_instance() {
-  ret=$(state_instance $1)
+  ret=$(state_instance "$1")
   [[ "$ret" == "RUNNING" ]] && echo "1" || echo ''
 }
 
@@ -113,10 +113,10 @@ is_running_instance() {
 ########################################
 restart_instance() {
   debug "=== restarting instance"
-  state_instance=$(state_instance $1)
+  state_instance=$(state_instance "$1")
   [[ "${state_instance}" != "NOT_EXISTS" ]] && {
-     [[ "${state_instance}" -eq "RUNNING" ]] &&  ${lxc_cmd} stop $1
-    ${lxc_cmd} start $1
+     [[ "${state_instance}" = "RUNNING" ]] &&  "${lxc_cmd}" stop "$1"
+    "${lxc_cmd}" start "$1"
   }
 }
 
@@ -259,5 +259,8 @@ test_common() {
 
   #restart_instance "lxd-dev:tst23"
   
-  get_part_from_container_name 'lxd:con'
+  #get_part_from_container_name 'lxd:con'
+  restart_instance "ns3"
 }
+
+test_common
