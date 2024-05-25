@@ -128,7 +128,7 @@ restart_instance() {
 #     строка после рендеринга
 ########################################
 template_render() {
-  eval "echo \"$(cat $1)\""  
+  eval "echo \"$(cat $1)\""
 }
 
 #############################################
@@ -145,16 +145,16 @@ template_render() {
 #     echo "host" || echo "container"
 #############################################
 get_part_from_container_name() {
-  host_lxc=$(echo $1 | sed -n -e      's/\(.*\):\(.*\)/\1/p')
-  container_lxc=$(echo $1 | sed -n -e 's/\(.*\):\(.*\)/\2/p')
+  host_lxc=$(echo "$1" | sed -n -e      's/\(.*\):\(.*\)/\1/p')
+  container_lxc=$(echo "$1" | sed -n -e 's/\(.*\):\(.*\)/\2/p')
   r=$2
   r=${r:="c"}
   case "$r" in
-    'h')  echo $host_lxc;
+    'h')  echo"$host_lxc";
       ;;
-    'c') echo $container_lxc;
+    'c') echo "$container_lxc";
       ;;
-    *) echo $container_lxc;
+    *) echo "$container_lxc";
       ;;
   esac
 }
@@ -177,14 +177,14 @@ find_dir_in_location() {
   tdc=${1}
   ### убрать из имени каталога имя сервера, если имя контейнера было как server:container
   #[[ "${tdc}" =~ ":" ]] && tdc=$(echo ${tdc} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
-  [[ "${tdc}" =~ ":" ]] && tdc=$(get_part_from_container_name $tdc)
+  [[ "${tdc}" =~ ":" ]] && tdc=$(get_part_from_container_name "$tdc")
   # вернуть имя каталога, если он существует в ./
-  if ([[ -n "$tdc" ]] && [[ -d "$tdc" ]]); then
-    echo $tdc
+  if [[ -n "$tdc" ]] && [[ -d "$tdc" ]]; then
+    echo "$tdc"
   else
     tdc=${DEF_DIR_CONFIGS}/${tdc}
     # вернуть имя каталога, если он существует в DEF_DIR_CONFIGS, иначе вернуть ''
-    ([[ -n "$tdc" ]] && [[ -d "$tdc" ]]) && echo $tdc || echo ''
+    ([[ -n "$tdc" ]] && [[ -d "$tdc" ]]) && echo "$tdc" || echo ''
   fi
 }
 
@@ -203,7 +203,7 @@ is_exists_func() {
     echo "not"
     return 0
   fi
-  declare -F ${1} > /dev/null && {
+  declare -F "${1}" > /dev/null && {
     echo "exists"
     return 1
   }
@@ -241,7 +241,7 @@ last_char_dir() {
     get)
       echo "${s: -1}"
       ;;
-    *) break_script ${ERR_BAD_ACTION_LASTCHAR_DIR} ;;
+    *) break_script "${ERR_BAD_ACTION_LASTCHAR_DIR}" ;;
   esac
   echo "${s}"
 }
