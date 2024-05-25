@@ -255,12 +255,13 @@ last_char_dir() {
 ## TEST
 ###########################################################
 test_common() {
+  # shellcheck source-path=SCRIPTDIR
   source ./functions/global_vars.sh
 
   #restart_instance "lxd-dev:tst23"
+  #restart_instance "ns3"
   
   #get_part_from_container_name 'lxd:con'
-  restart_instance "ns3"
 }
 
-test_common
+#test_common
