@@ -1,5 +1,6 @@
 #!/bin/bash
 #common.sh
+# shellcheck disable=SC2059
 
 #############################################
 # Вызов справки
@@ -12,7 +13,7 @@ help() {
     -b, --backup                - действие 'backup', копия данных из контейнера
     -c, --config-dir DirConf    - каталог с файлами конфигурации и инициализации контейнера
     --cipher-file-dir           - начальный каталог для поиска файлов для шифрования
-    --cipher-file-name          - ьаска файлов для поиска
+    --cipher-file-name          - маска файлов для поиска
     -d, --delete                - действие 'delete', удалить контейнер
         --debug                 - выводить отладочную информацию
         --debug-level Number    - уровень отладочной информации
@@ -128,7 +129,7 @@ restart_instance() {
 #     строка после рендеринга
 ########################################
 template_render() {
-  eval "echo \"$(cat $1)\""
+  eval "echo \"$(cat "$1")\""
 }
 
 #############################################
@@ -184,7 +185,7 @@ find_dir_in_location() {
   else
     tdc=${DEF_DIR_CONFIGS}/${tdc}
     # вернуть имя каталога, если он существует в DEF_DIR_CONFIGS, иначе вернуть ''
-    ([[ -n "$tdc" ]] && [[ -d "$tdc" ]]) && echo "$tdc" || echo ''
+    { [ -n "$tdc" ] && [ -d "$tdc" ]; } && echo "$tdc" || echo ''
   fi
 }
 
@@ -230,7 +231,7 @@ last_char_dir() {
   s=${1}
   l=${#s}
   act=$2; act=${act:='add'}
-  ( [[ "${act}" == "add" ]] || [[ "${act}" == "del" ]] || [[ "${act}" == "get" ]] ) || act='add'
+  { { [ "$act" == "add" ] || [ "$act" == "del" ]; } || [ "$act" == "get" ]; } || act='add'
   case "$act" in
     add)
       [[ "${s: -1}" != "/" ]] && s="${s}/"
@@ -256,7 +257,7 @@ last_char_dir() {
 ###########################################################
 test_common() {
   # shellcheck source-path=SCRIPTDIR
-  source ./functions/global_vars.sh
+  source functions/global_vars.sh || source global_vars.sh
 
   #restart_instance "lxd-dev:tst23"
   #restart_instance "ns3"
