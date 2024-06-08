@@ -1,0 +1,5 @@
+#!/bin/sh
+
+after_init_container() {
+  echo "DISPATH HOOK: after_init_container"
+}
