@@ -3,7 +3,10 @@
 **.vault
 **_render
 **test
+**.test
 **backup
 **.idea
 **secrets
 **regex
+**.files
+**.files_tmpl
