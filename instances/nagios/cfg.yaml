@@ -7,17 +7,8 @@ config:
     timezone: Asia/Vladivostok
     packages_update: true
     packages:
-      - wget
-      - unzip
-      - curl
-      - openssl
-      - build-essential
-      - libgd-dev
-      - libssl-dev
-      - libapache2-mod-php
-      - php-gd
-      - php
-      - apache2
+      - openssh-server
+      - nagios4
       - socat
     write_files:
       - path: /root/.ssh/authorized_keys
