@@ -82,7 +82,7 @@ add_instance() {
   if [[ -d "${dir_cfg}/${DEF_FILES}" ]]; then
     debug "--- Работа с файлами"
     op=$(pwd)
-    cd "${dir_cfg}/${DEF_FILES}" || { echo "Not exists DIR \"${dir_cfg}/${DEF_FILES}\""; exit 1; }
+    cd "${dir_cfg}/${DEF_FILES}"
     find . -name "*" -type f -print0 | xargs -I {} -r0 "${lxc_cmd}" file push -p {} "${CONTAINER_NAME}/{}"
     ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
     ret=$?

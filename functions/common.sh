@@ -147,11 +147,15 @@ template_render() {
 #############################################
 get_part_from_container_name() {
   host_lxc=$(echo "$1" | sed -n -e      's/\(.*\):\(.*\)/\1/p')
-  container_lxc=$(echo "$1" | sed -n -e 's/\(.*\):\(.*\)/\2/p')
+  if [ -z "$host_lxc" ]; then
+    container_lxc="$1"
+  else
+    container_lxc=$(echo "$1" | sed -n -e 's/\(.*\):\(.*\)/\2/p')
+  fi
   r=$2
   r=${r:="c"}
   case "$r" in
-    'h')  echo"$host_lxc";
+    'h')  echo "$host_lxc";
       ;;
     'c') echo "$container_lxc";
       ;;
@@ -237,6 +241,9 @@ last_char_dir() {
       [[ "${s: -1}" != "/" ]] && s="${s}/"
       ;;
     del)
+      # удалить все символы '/' в конце строки
+      #echo "dsfsdf/sdfsdf//////"|sed -En "s/[\/]*$//p"
+      # удалить символ '/' в конце строки
       [[ "${s: -1}" == "/" ]] && s="${s:0:$((l - 1))}"
       ;;
     get)

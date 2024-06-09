@@ -5,7 +5,7 @@ config:
   cloud-init.user-data: |
     #cloud-config
     timezone: Asia/Vladivostok
-    packages_update: true
+    package_upgrade: true
     packages:
       - openssh-server
       - nagios4
@@ -21,6 +21,19 @@ config:
         content: |
           net.ipv6.conf.all.disable_ipv6=1
           net.ipv6.conf.default.disable_ipv6=1
+      - path: /etc/nagios-plugins/config/nt.cfg
+        permissions: \"0644\"
+        content: |
+          # 'check_nt' command definition
+          define command {
+            command_name    check_nt
+            command_line    /usr/lib/nagios/plugins/check_nt -H '\$HOSTADDRESS\$' -v '\$ARG1\$'
+          }
+          # 'check_nscp' command definition
+          define command {
+            command_name    check_nscp
+            command_line    /usr/lib/nagios/plugins/check_nt -H '\$HOSTADDRESS\$' -p 12489 -v '\$ARG1\$' \$ARG2\$
+          }
   cloud-init.network-config: |
     #cloud-config
     version: 2
