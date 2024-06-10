@@ -10,3 +10,5 @@
 **regex
 **.files
 **.files_tmpl
+**.tools
+**.bash_history
