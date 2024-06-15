@@ -9,10 +9,13 @@
 #/root/.bashrc
 #/root/.profile
 
-name_tar=/root/named.tar.gz
-#force_backup=1
+name_tar="${1}"
+dt="$(date +"%Y%m%d-%H%M%S")-"
+unset dt
+name_tar="${name_tar:=${dt}named.tar.gz}"
+name_tar="/root/$name_tar"
+echo "$0 - name_tar: $name_tar"
 
-# /etc/bind
 lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf ${name_tar} /etc/apache2/conf-available/nagios4-cgi.conf /etc/apache2/mods-available/mime.conf /etc/nagios4/* /usr/lib/nagios/*.sh /etc/exim4/* /root/.config/* /root/.ssh/* /root/.bash_history /root/.bashrc /root/.profile > /dev/null"
 if [[ $? -eq 0 ]]; then
   lxc file pull -q -p ${CONTAINER_NAME}${name_tar} ${where_copy}

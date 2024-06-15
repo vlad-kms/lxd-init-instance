@@ -9,7 +9,9 @@ backup_data_instance() {
   [[ -z ${CONTAINER_NAME} ]] && break_script ${ERR_BAD_ARG_NOT_CONATINER_NAME}
   [[ ! -f ${dir_cfg}/${DEF_SCRIPT_BACKUP} ]] && break_script ${ERR_NOT_SCRIPT_BACKUP}
   debug "--- Выполнить ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
-  [[ $DEBUG_LEVEL -lt 90 ]] && source ${dir_cfg}/${DEF_SCRIPT_BACKUP}
+  def_name_tar="$(date +"%Y%m%d-%H%M%S")-named.tar.gz"
+  debug "--- Имя файла бэкапа: ${def_name_tar}"
+  [[ $DEBUG_LEVEL -lt 90 ]] && source ${dir_cfg}/${DEF_SCRIPT_BACKUP} "${def_name_tar}"
   # после выхода из скрипта $ret_code содержит код ошибки
   # =0        - нет ошибки
   # >0 && <11 - передать код $ret_code дальше вверх про стеку выполнения
