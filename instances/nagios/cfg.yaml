@@ -10,6 +10,7 @@ config:
       - openssh-server
       - nagios4
       - swaks
+      - curl
       - socat
     write_files:
       - path: /root/.ssh/authorized_keys
