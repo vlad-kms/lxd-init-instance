@@ -19,6 +19,10 @@ after_start() {
   ${cmd} find /etc/nagios4/objects -type f -exec chmod 0644 {} \;
   ${cmd} find /etc/nagios4/servers -type f -exec chmod 0644 {} \;
   ${cmd} find /etc/nagios4/switches -type f -exec chmod 0644 {} \;
+  # configure /usr/lib/nagios
+  wd=/usr/lib/nagios
+  ${cmd} chmod 0755 "${wd}"
+  
   ${cmd} systemctl enable nagios4 
 }
 

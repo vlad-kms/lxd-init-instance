@@ -14,13 +14,19 @@
 #	named.conf.local
 #	named.conf.options
 
-name_tar=/root/named.tar.gz
+#name_tar=/root/named.tar.gz
 force_backup=1
+
+name_tar="${1}"
+dt="$(date +"%Y%m%d-%H%M%S")-"
+name_tar="${name_tar:=${dt}named.tar.gz}"
+name_tar="/root/$name_tar"
+echo "$0 - name_tar: $name_tar"
 
 lxc -q exec ${CONTAINER_NAME} -- sh -c "rndc sync -clean > /dev/null && rc-service named stop > /dev/null"
 if [[ $? -eq 0 ]] || [[ $force_backup -ne 0 ]]; then
   # /etc/bind
-  lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf ${name_tar} --exclude=*.jnl /var/bind/named.conf.lan-zone /var/bind/named.conf.acl > /dev/null"
+  lxc -q exec ${CONTAINER_NAME} -- sh -c "tar -czf ${name_tar} --exclude=*.jnl /var/bind/named.conf.lan-zone /var/bind/named.conf.acl > /dev/null 2> /dev/null"
   if [[ $? -eq 0 ]]; then
     lxc file pull -q -p ${CONTAINER_NAME}${name_tar} ${where_copy}
     if [[ $? -eq 0 ]]; then

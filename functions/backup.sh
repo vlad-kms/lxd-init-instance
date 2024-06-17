@@ -11,7 +11,8 @@ backup_data_instance() {
   debug "--- Выполнить ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
   def_name_tar="$(date +"%Y%m%d-%H%M%S")-named.tar.gz"
   debug "--- Имя файла бэкапа: ${def_name_tar}"
-  [[ $DEBUG_LEVEL -lt 90 ]] && source ${dir_cfg}/${DEF_SCRIPT_BACKUP} "${def_name_tar}"
+  [[ $DEBUG_LEVEL -lt 90 ]] && archive_name=$(source ${dir_cfg}/${DEF_SCRIPT_BACKUP} "${def_name_tar}" | sed -En "s/(.*: )(.*)$/\2/p")
+  debug "--- Имя файла бэкапа (после работы): ${archive_name}"
   # после выхода из скрипта $ret_code содержит код ошибки
   # =0        - нет ошибки
   # >0 && <11 - передать код $ret_code дальше вверх про стеку выполнения
