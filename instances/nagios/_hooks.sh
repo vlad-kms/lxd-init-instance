@@ -14,14 +14,19 @@ after_start() {
   ${cmd} find /etc/apache2 -type f -exec chmod 0644 {} \;
   ${cmd} a2enmod cgi
   # configure nagios
-  ${cmd} chmod 0755 /etc/nagios4
-  ${cmd} find /etc/nagios4 -type d -exec chmod 0755 {} \;
-  ${cmd} find /etc/nagios4/objects -type f -exec chmod 0644 {} \;
-  ${cmd} find /etc/nagios4/servers -type f -exec chmod 0644 {} \;
-  ${cmd} find /etc/nagios4/switches -type f -exec chmod 0644 {} \;
+  wd=/etc/nagios4
+  ${cmd} chmod 0755 "$wd"
+  ${cmd} find "$wd" -type d -exec chmod 0755 {} \;
+  ${cmd} find "${wd}/objects" -type f -exec chmod 0644 {} \;
+  ${cmd} find "${wd}/servers" -type f -exec chmod 0644 {} \;
+  ${cmd} find "${wd}/switches" -type f -exec chmod 0644 {} \;
   # configure /usr/lib/nagios
   wd=/usr/lib/nagios
   ${cmd} chmod 0755 "${wd}"
+  # configure /usr/share/nagios4/htdocs/images/logos/eve
+  wd=/usr/share/nagios4
+  ${cmd} chmod 0755 "$wd"
+  ${cmd} find "$wd" -type d -exec chmod 0755 {} \;
   
   ${cmd} systemctl enable nagios4 
 }
