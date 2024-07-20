@@ -1,6 +1,7 @@
 config:
   environment.EDITOR: mcedit
   environment.ENV: /etc/profile
+  boot.autostart.delay: 20
   
   cloud-init.user-data: |
     #cloud-config
@@ -12,6 +13,7 @@ config:
       - swaks
       - curl
       - socat
+      - traceroute
     write_files:
       - path: /root/.ssh/authorized_keys
         permissions: \"0600\"

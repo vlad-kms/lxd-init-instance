@@ -27,7 +27,9 @@ after_start() {
   wd=/usr/share/nagios4
   ${cmd} chmod 0755 "$wd"
   ${cmd} find "$wd" -type d -exec chmod 0755 {} \;
-  
-  ${cmd} systemctl enable nagios4 
+  # включиь службу nagios
+  ${cmd} systemctl enable nagios4
+  # очистить кэш
+  ${cmd} apt-get clean
 }
 
