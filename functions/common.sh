@@ -1,5 +1,6 @@
 #!/bin/bash
 #common.sh
+# shellcheck disable=SC2059
 
 #############################################
 # Вызов справки
@@ -12,12 +13,12 @@ help() {
     -b, --backup                - действие 'backup', копия данных из контейнера
     -c, --config-dir DirConf    - каталог с файлами конфигурации и инициализации контейнера
     --cipher-file-dir           - начальный каталог для поиска файлов для шифрования
-    --cipher-file-name          - ьаска файлов для поиска
+    --cipher-file-name          - маска файлов для поиска
     -d, --delete                - действие 'delete', удалить контейнер
         --debug                 - выводить отладочную информацию
         --debug-level Number    - уровень отладочной информации
-        --decode-file           - дешифровать файл "FileName-enc" и сохранить в "FileName"
-        --encode-file           - шифровать файл "FileName" и сохранить в "FileName-enc"
+        --decode-file           - дешифровать файл \"FileName-enc\" и сохранить в \"FileName\"
+        --encode-file           - шифровать файл \"FileName\" и сохранить в \"FileName-enc\"
     -e, --env EnvName=EnvValue  - значения для переопределния переменных в файлах конфигурации
     -h, --help                  - вызов справки
     -i, --image InageName       - образ, с которого создать контейнер
@@ -27,9 +28,9 @@ help() {
     -u, --vaults FileName       - файл со значениями секретных переменных для сборки контейнера, которые не хранятся в git
     -v, --vars FileName         - файл со значениями переменных для сборки контейнера, которые хранятся в git
     -w, --where-copy DirName    - куда сделать бэкап данных из контейнера
-    --use-name Number           - <>0 - добавлять в конце к каталогу $where_copy имя контейнера
+    --use-name Number           - <>0 - добавлять в конце к каталогу where_copy имя контейнера
                                   иначе не добавлять. По-умолчанию = 1
-    --use-dir_cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY $dir_cfg, т.е. каталог будет ($dir_cfg/$DEF_WHERE_COPY),
+    --use-dir_cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY dir_cfg, т.е. каталог будет dir_cfg/DEF_WHERE_COPY),
                                   иначе не добавлять. По-умолчанию = 0
     -x, --export                - экспорт образ контейнера
   "
@@ -50,9 +51,9 @@ debug() {
 #     $2 - дополнительная строка для вывода
 ########################################
 break_script() {
-  item_msg_err $1
-  [[ -z $2 ]] || echo $2
-  exit $1
+  item_msg_err "$1"
+  [[ -z $2 ]] || echo "$2"
+  exit "$1"
 }
 
 #####################################################
@@ -84,12 +85,12 @@ state_instance() {
     echo 'NOT_EXISTS'
     return 0
   }
-  ret=$(lxc info $1 2> /dev/null | grep 'Status:')
+  ret=$(lxc info "$1" 2> /dev/null | grep 'Status:')
   [[ $? -ne 0 ]] && {
     echo 'NOT_EXISTS'
     return 0
   }
-  echo $ret | sed -n -e 's/Status:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+  echo "$ret" | sed -n -e 's/Status:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   return 1
 }
 
@@ -102,7 +103,7 @@ state_instance() {
 #     echo ""  - контейнер не запущен
 #####################################################
 is_running_instance() {
-  ret=$(state_instance $1)
+  ret=$(state_instance "$1")
   [[ "$ret" == "RUNNING" ]] && echo "1" || echo ''
 }
 
@@ -113,10 +114,10 @@ is_running_instance() {
 ########################################
 restart_instance() {
   debug "=== restarting instance"
-  state_instance=$(state_instance $1)
+  state_instance=$(state_instance "$1")
   [[ "${state_instance}" != "NOT_EXISTS" ]] && {
-     [[ "${state_instance}" -eq "RUNNING" ]] &&  ${lxc_cmd} stop $1
-    ${lxc_cmd} start $1
+     [[ "${state_instance}" = "RUNNING" ]] &&  "${lxc_cmd}" stop "$1"
+    "${lxc_cmd}" start "$1"
   }
 }
 
@@ -128,7 +129,7 @@ restart_instance() {
 #     строка после рендеринга
 ########################################
 template_render() {
-  eval "echo \"$(cat $1)\""  
+  eval "echo \"$(cat "$1")\""
 }
 
 #############################################
@@ -145,16 +146,20 @@ template_render() {
 #     echo "host" || echo "container"
 #############################################
 get_part_from_container_name() {
-  host_lxc=$(echo $1 | sed -n -e      's/\(.*\):\(.*\)/\1/p')
-  container_lxc=$(echo $1 | sed -n -e 's/\(.*\):\(.*\)/\2/p')
+  host_lxc=$(echo "$1" | sed -n -e      's/\(.*\):\(.*\)/\1/p')
+  if [ -z "$host_lxc" ]; then
+    container_lxc="$1"
+  else
+    container_lxc=$(echo "$1" | sed -n -e 's/\(.*\):\(.*\)/\2/p')
+  fi
   r=$2
   r=${r:="c"}
   case "$r" in
-    'h')  echo $host_lxc;
+    'h')  echo "$host_lxc";
       ;;
-    'c') echo $container_lxc;
+    'c') echo "$container_lxc";
       ;;
-    *) echo $container_lxc;
+    *) echo "$container_lxc";
       ;;
   esac
 }
@@ -177,14 +182,14 @@ find_dir_in_location() {
   tdc=${1}
   ### убрать из имени каталога имя сервера, если имя контейнера было как server:container
   #[[ "${tdc}" =~ ":" ]] && tdc=$(echo ${tdc} | sed -n -e  's/\(.*\):\(.*\)/\2/p')
-  [[ "${tdc}" =~ ":" ]] && tdc=$(get_part_from_container_name $tdc)
+  [[ "${tdc}" =~ ":" ]] && tdc=$(get_part_from_container_name "$tdc")
   # вернуть имя каталога, если он существует в ./
-  if ([[ -n "$tdc" ]] && [[ -d "$tdc" ]]); then
-    echo $tdc
+  if [[ -n "$tdc" ]] && [[ -d "$tdc" ]]; then
+    echo "$tdc"
   else
     tdc=${DEF_DIR_CONFIGS}/${tdc}
     # вернуть имя каталога, если он существует в DEF_DIR_CONFIGS, иначе вернуть ''
-    ([[ -n "$tdc" ]] && [[ -d "$tdc" ]]) && echo $tdc || echo ''
+    { [ -n "$tdc" ] && [ -d "$tdc" ]; } && echo "$tdc" || echo ''
   fi
 }
 
@@ -203,7 +208,7 @@ is_exists_func() {
     echo "not"
     return 0
   fi
-  declare -F ${1} > /dev/null && {
+  declare -F "${1}" > /dev/null && {
     echo "exists"
     return 1
   }
@@ -230,18 +235,21 @@ last_char_dir() {
   s=${1}
   l=${#s}
   act=$2; act=${act:='add'}
-  ( [[ "${act}" == "add" ]] || [[ "${act}" == "del" ]] || [[ "${act}" == "get" ]] ) || act='add'
+  { { [ "$act" == "add" ] || [ "$act" == "del" ]; } || [ "$act" == "get" ]; } || act='add'
   case "$act" in
     add)
       [[ "${s: -1}" != "/" ]] && s="${s}/"
       ;;
     del)
+      # удалить все символы '/' в конце строки
+      #echo "dsfsdf/sdfsdf//////"|sed -En "s/[\/]*$//p"
+      # удалить символ '/' в конце строки
       [[ "${s: -1}" == "/" ]] && s="${s:0:$((l - 1))}"
       ;;
     get)
       echo "${s: -1}"
       ;;
-    *) break_script ${ERR_BAD_ACTION_LASTCHAR_DIR} ;;
+    *) break_script "${ERR_BAD_ACTION_LASTCHAR_DIR}" ;;
   esac
   echo "${s}"
 }
@@ -255,9 +263,13 @@ last_char_dir() {
 ## TEST
 ###########################################################
 test_common() {
-  source ./functions/global_vars.sh
+  # shellcheck source-path=SCRIPTDIR
+  source functions/global_vars.sh || source global_vars.sh
 
   #restart_instance "lxd-dev:tst23"
+  #restart_instance "ns3"
   
-  get_part_from_container_name 'lxd:con'
+  #get_part_from_container_name 'lxd:con'
 }
+
+#test_common

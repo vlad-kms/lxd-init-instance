@@ -1,5 +1,7 @@
+#!/bin/bash
+
 # Коды возврата
-ERR_SHELL=1;                            # ошибка выполнения команд оболочки
+#ERR_SHELL=1;                            # ошибка выполнения команд оболочки
 ERR_UNDEFINED=99                        # неизвестная ошибка
 ERR_BAD_ARG=100;                        # Неверный аргумент: каталог с конфигурационными файлами
 ERR_BAD_ARG_FILE_VARS_NOT=101;          # Неверный аргумент: файл с переменными
@@ -17,18 +19,18 @@ ERR_DELETE_CONTAINER=140                # Ошибка при удалениии
 
 declare -A msg_arr
 msg_arr[${ERR_UNDEFINED}]='Неизвестная ошибка'
-msg_arr[${ERR_BAD_ARG}]='Неверные аргументы: неверно указан каталог \"${CONFIG_DIR_NAME}\" с конфигурацией для инициализации экземпляра контейнера или он не существует'
-msg_arr[${ERR_BAD_ARG_FILE_VARS_NOT}]='Неверные аргументы: неверно указан файл с переменными \"${VARS_NAME}\"'
-msg_arr[${ERR_BAD_ARG_FILE_SECRET_VARS_NOT}]='Неверные аргументы: неверно указан файл с секретными переменными \"${arg_vault}\"'
-msg_arr[${ERR_RENDER_TEMPLATE_NOT_CATALOG}]='Неверные аргументы: каталог для подготовленных шаблонов \"$dtr\" не является каталогом'
-msg_arr[${ERR_FILE_CONFIG_NOT}]='Файл ${dir_cfg}/${DEF_CFG_YAML} не существует. Выполнение скрипта прервано'
-msg_arr[${ERR_BAD_ARG_NOT_CONATINER_NAME}]='Неверные аргументы: требуется имя контейнера для действия'
+msg_arr[${ERR_BAD_ARG}]="Неверные аргументы: неверно указан каталог \"${CONFIG_DIR_NAME}\" с конфигурацией для инициализации экземпляра контейнера или он не существует"
+msg_arr[${ERR_BAD_ARG_FILE_VARS_NOT}]="Неверные аргументы: неверно указан файл с переменными \"${VARS_NAME}\""
+msg_arr[${ERR_BAD_ARG_FILE_SECRET_VARS_NOT}]="Неверные аргументы: неверно указан файл с секретными переменными \"${arg_vault}\""
+msg_arr[${ERR_RENDER_TEMPLATE_NOT_CATALOG}]="Неверные аргументы: каталог для подготовленных шаблонов \"$dtr\" не является каталогом"
+msg_arr[${ERR_FILE_CONFIG_NOT}]="Файл \"${dir_cfg}/${DEF_CFG_YAML}\" не существует. Выполнение скрипта прервано"
+msg_arr[${ERR_BAD_ARG_NOT_CONATINER_NAME}]="Неверные аргументы: требуется имя контейнера для действия"
 msg_arr[${ERR_IMAGE_NOT}]='Неверный image'
 msg_arr[${ERR_CREATE_CONTAINER}]='Ошибка создания контейнера'
-msg_arr[${ERR_NOT_SCRIPT_BACKUP}]='В каталоге конфигурации нет скрипта для бэкапа "${dir_cfg}/${DEF_SCRIPT_BACKUP}"'
-msg_arr[${ERR_NOT_DIR_WHERE_COPY}]='Место куда складывать бэкапы не является каталогом "${where_copy}"'
-msg_arr[${ERR_BAD_ACTION_LASTCHAR_DIR}]='Неверное действие ${act} с последним символом в имени каталога'
-msg_arr[${ERR_DELETE_CONTAINER=140}]='Ошибка при удалениии контейнера ${CONTAINER_NAME}'
+msg_arr[${ERR_NOT_SCRIPT_BACKUP}]="В каталоге конфигурации нет скрипта для бэкапа \"${dir_cfg}/${DEF_SCRIPT_BACKUP}\""
+msg_arr[${ERR_NOT_DIR_WHERE_COPY}]="Место куда складывать бэкапы не является каталогом \"${where_copy}\""
+msg_arr[${ERR_BAD_ACTION_LASTCHAR_DIR}]="Неверное действие \"${act}\" с последним символом в имени каталога"
+msg_arr[${ERR_DELETE_CONTAINER=140}]="Ошибка при удалениии контейнера \"${CONTAINER_NAME}\""
 
 lxc_cmd=lxc
 
@@ -75,5 +77,5 @@ pass_file=''
 
 item_msg_err() {
   [[ -z $1 ]] && i=$ERR_UNDEFINED || i=$1
-  eval echo ${msg_arr[${i}]}
+  eval echo "${msg_arr[${i}]}"
 }

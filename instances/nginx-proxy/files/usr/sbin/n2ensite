@@ -1,57 +1,50 @@
-#!/bin/sh
+#!/bin/bash
+# use n2ensite s1.conf s2 s3
+ng_fld_s_av=/etc/nginx/sites-available
+ng_fld_s_en=/etc/nginx/sites-enabled
 
-avail_dir="/opt/dev/ext/sites-available"
-enabled="/opt/dev/ext/sites-enabled"
+# pipe + args
+pp1=();pp1+=("$@")
+read -r -t .01 -a pp2
+pp1+=("${pp2[@]}")
 
-avail_dir="/etc/nginx/sites-available"
-enabled="/etc/nginx/sites-enabled"
-
-site=$(ls ${avail_dir})
-
-([[ -d "${avail_dir}"  ]] && [[ -d "${enabled}" ]]) || {
-    echo "Error!! Folders ${avail_dir} & ${enabled} not found."
-    exit 0
+[ "${#pp1[*]}" = "0" ] && {
+  echo "Use script: n2ensite site_config1 site_config2 ..."
+  exit 1
 }
-[[ -z $1 ]] && {
-    echo "Error!!! Not available argument for config file site"
-    echo "Use script: n2en site_config"
-    echo -e "\nAvailable configs:\n$site"
-    exit 0
-}
-
-site_file="str"
-site_file="${1}"
-#avail="${avail_dir}/${site_file}"
-avail="${avail_dir}/$1"
-# проверить существование файла $1
-[[ ! -f ${avail} ]] && site_file="${1}.conf"
-avail="${avail_dir}/$1.conf"
-# проверить существование файла $1.conf
-[[ ! -f ${avail} ]] && {
-    echo "Error!!! Not available config file site"
-    echo "Use script: n2en site_config"
-    echo -e "\nAvailable configs:\n$site"
-    exit 0
-}
-
-if [ "$#" != "1" ]; then
-        echo "Use script: n2en site_config"
-        echo -e "\nAvailable configs:\n$site"
-        exit 0
+if test -d $ng_fld_s_av && test -d $ng_fld_s_en; then
+  echo "-------------------------------"
 else
-    if test -e $avail; then
-	    ln -s $avail $enabled
-    else
-	    echo -e "$avail config does not exist! Please create one!\n$site"
-	    exit 0
-    fi
-    if test -e "${enabled}/${site_file}"; then
-	    echo "Success!!"
-	    echo "For test nginx config: sudo nginx -t"
-	    echo "Now reload nginx server: sudo systemctl reload nginx"
-    else
-	    #echo  -e "Config $avail does not exist!\nPlease see avail configs:\n$site"
-	    exit 0
-    fi
+  echo "Error. Folders ${ng_fld_s_av} or(and) ${ng_fld_s_en} not found"
+  exit 1
 fi
-exit 0
+
+is_restart_nginx=0
+num_success=0
+num_all=0
+for i in "${pp1[@]}"; do
+  # будем рассматривать только файлы с расширением .conf
+  if [[ "${i: -5}" != '.conf' ]]; then
+    current_conf="${i}.conf"
+  else
+    current_conf="${i}"
+  fi
+  #for file in $(find "$ng_fld_s_av" -name "$current_conf" -type f); do
+  while IFS= read -r -d '' file
+  do
+    num_all=$((num_all+1))
+    ln -f -s "$file" "$ng_fld_s_en"
+    echo "Enable sites in file conf: $file"
+    num_success=$((num_success+1))
+    # флаг, что после всех операций надо перезагрузить nginx.service
+    is_restart_nginx=1
+  done <  <(find "$ng_fld_s_av" -name "$current_conf" -type l,f -print0)
+done
+# завершение и вывод предупреждающих сообщений
+if [ "$is_restart_nginx" != "0" ]; then
+  echo "All conf files: $num_all"
+  echo "Success: $num_success"
+  echo "For test nginx config: sudo nginx -t"
+  echo "Now reload nginx server: sudo systemctl reload nginx"
+  echo "-------------------------------"
+fi

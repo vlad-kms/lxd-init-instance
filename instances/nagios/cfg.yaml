@@ -1,0 +1,57 @@
+config:
+  environment.EDITOR: mcedit
+  environment.ENV: /etc/profile
+  boot.autostart.delay: 20
+  
+  cloud-init.user-data: |
+    #cloud-config
+    timezone: Asia/Vladivostok
+    package_upgrade: true
+    packages:
+      - openssh-server
+      - nagios4
+      - swaks
+      - curl
+      - socat
+      - traceroute
+    write_files:
+      - path: /root/.ssh/authorized_keys
+        permissions: \"0600\"
+        content: |
+          ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAkwes1Wn8jrKFQI1+c43OAtq1ve6dxm+h7OctUx+v0SOn1QlybXPAB020+bHj/pVfUM9o9BVoaNUF199xosN3grpqJ33SOMU8d1nC8cG0tQP7jemjEqKzyO2Wc2mYkiimyaH3vCj+6/77M+AzFiO5QUNj20yUu9g8Fi1fSUcokhABMbIBhn8SMujZti05tdh6ILqWhUPFbdwn9LzdzREomtwzebORi48B3ROU/+D2I4zVcpRPQpHkVt89lvmgMzbozmfA1dq5KSIsg6nuwSU854nbxiDGCz+IvgQpUH2qWNdSji7sWPBGU19TD2g1BuH18ZCoK/Q4l/5xpVSynhW1XQ== rsa-key-20220217-home_lan
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH1nzbCN1MIxM9MrTpqrMf/co88+V7Xs8mluYOtpAHAI ed25519-home
+      - path: /etc/nagios-plugins/config/nt.cfg
+        permissions: \"0644\"
+        content: |
+          # 'check_nt' command definition
+          define command {
+            command_name    check_nt
+            command_line    /usr/lib/nagios/plugins/check_nt -H '\$HOSTADDRESS\$' -v '\$ARG1\$'
+          }
+          # 'check_nscp' command definition
+          define command {
+            command_name    check_nscp
+            command_line    /usr/lib/nagios/plugins/check_nt -H '\$HOSTADDRESS\$' -p 12489 -v '\$ARG1\$' \$ARG2\$
+          }
+  cloud-init.network-config: |
+    #cloud-config
+    version: 2
+    ethernets:
+      eth0:
+        addresses:
+          - $IPV4/$MASK
+        gateway4: $GW
+        nameservers:
+          addresses:
+            - 192.168.16.3
+          search:
+            - home.lan
+            - klinika.lan
+          domain: home.lan
+        domain: home.lan
+profiles:
+  - default
+  - low_mem
+  - low_cpu
+  - $NET_INSTANCE
+  - autostart

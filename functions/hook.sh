@@ -23,6 +23,7 @@ hook_dispath() {
   local script_file=''
   local script_dir=$(last_char_dir ${dir_cfg})
   local c=$#;
+  local func=''
   if (( $c >= 2 )); then
     script_file="${script_dir}_${1}.sh"
     func="${2}"
@@ -31,7 +32,6 @@ hook_dispath() {
     func="${1}"
   else
     # аргументов 0
-    ret_code=0
     return 0
   fi
   # сохранить ИмяФункции 
@@ -44,14 +44,13 @@ hook_dispath() {
   }
   # если опять не существует файла  $script, то выход. Нет скриптов
   [[ ! -f $script_file ]] && {
-    ret_code=0
     return 0
   }
 
   # подключить файл с ловушками, если он передан и существует
   source $script_file
 
-  if [[ -n $func ]]; then
+  if [[ -n ${func} ]]; then
     ### существует ли функция $func и global_$func
     local gl_fn="global_${func}"
     local x=$(is_exists_func "${gl_fn}")

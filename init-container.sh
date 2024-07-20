@@ -19,9 +19,9 @@ source ./functions/cipher.sh
 # обработка ошибок
 #############################################
 clear_working() {
-  ([[ -n "${tmpfile}" ]]  && [[ -f "${tmpfile}" ]])  && rm "${tmpfile}"
-  ([[ -n "${tmpfile1}" ]] && [[ -f "${tmpfile1}" ]]) && rm "${tmpfile1}"
-  ([[ -n "${dtr}" ]] && [[ -d "${dtr}" ]]) && rm -r "${dtr}"
+  { [[ -n "${tmpfile}" ]]  && [[ -f "${tmpfile}" ]]; }  && rm "${tmpfile}"
+  { [[ -n "${tmpfile1}" ]] && [[ -f "${tmpfile1}" ]]; } && rm "${tmpfile1}"
+  { [[ -n "${dtr}" ]] && [[ -d "${dtr}" ]]; } && rm -r "${dtr}"
 }
 
 on_error() {
@@ -85,9 +85,9 @@ cipher_file_name=${cipher_file_name:=${DEF_CIPHER_FILE_NAME}}
 if [ "${DEBUG}" -eq 0 ]; then
   lxc_cmd="${lxc_cmd} -q"
 else
-  if [ $DEBUG_LEVEL -eq 1 ]; then
+  if [ "$DEBUG_LEVEL" -eq "1" ]; then
     lxc_cmd="${lxc_cmd}"
-  elif [ ${DEBUG_LEVEL} -eq 2 ]; then
+  elif [ "${DEBUG_LEVEL}" -eq "2" ]; then
     lxc_cmd="${lxc_cmd} --debug"
   else
     lxc_cmd="${lxc_cmd} --debug"
@@ -134,10 +134,12 @@ fi
 ### Подгружаем переменные
 ### Сначала из файла ИМЯСКРИПТА.conf
 global_vars=${0}.conf
+# shellcheck source=functions/${global_vars}
 [[ -f "${global_vars}" ]] && source "${global_vars}"
 ### Теперь подгружаем переменные из каталога с конфигурацией инстанса
 ### ${dir_cfg}/${DEF_VARS_CONF} (vars.conf)
 project_vars="${dir_cfg}/${DEF_VARS_CONF}"
+# shellcheck source=functions/${project_vars}
 [[ -f ${project_vars} ]] && source ${project_vars} || unset project_vars
 ### Если передали -v (--vars), то подгружаем переменные из файла переданного в этом параметре
 arg_vars="${VARS_NAME}"
@@ -146,11 +148,13 @@ arg_vars="${VARS_NAME}"
 if ([[ -n "$arg_vars" ]] && [[ ! -f "$arg_vars" ]]);then
   break_script ${ERR_BAD_ARG_FILE_VARS_NOT}
 fi
+# shellcheck source=functions/${arg_vars}
 [[ -f ${arg_vars} ]] && source ${arg_vars} || unset arg_vars
 
 ### Теперь подгружаем секретные переменные из каталога с конфигурацией инстанса
 ### ${dir_cfg}/${DEF_VARS_VAULT} (vars.vault)
 project_vault="${dir_cfg}/${DEF_VARS_VAULT}"
+# shellcheck source=functions/${project_vault}
 [[ -f ${project_vault} ]] && source ${project_vault} || unset project_vault
 arg_vault="${VAULTS_NAME}"
 ### Проверить что $arg_vault является файлом, если передан как аргумент
@@ -158,6 +162,7 @@ arg_vault="${VAULTS_NAME}"
 if ([[ -n "$arg_vault" ]] && [[ ! -f "$arg_vault" ]]);then
   break_script ${ERR_BAD_ARG_FILE_SECRET_VARS_NOT}
 fi
+# shellcheck source=functions/${arg_vault}
 [[ -f ${arg_vault} ]] && source ${arg_vault} || unset arg_vault
 
 ### Теперь заменяем переменные, значениями переданными через командную строку (-e, --env)

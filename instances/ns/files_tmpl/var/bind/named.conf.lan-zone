@@ -54,10 +54,10 @@ view \"internal-view\" {
 	file \"db.oc.home.lan\";
     };
 
-    zone \"mrovo.lan\" in {
-	type master;
-	file \"db.mrovo.lan\";
-    };
+    //zone \"mrovo.lan\" in {
+    //    type master;
+    //    file \"db.mrovo.lan\";
+    //};
 
     zone \"16.168.192.in-addr.arpa\" {
         type master;

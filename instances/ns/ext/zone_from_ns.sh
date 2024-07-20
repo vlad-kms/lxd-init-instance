@@ -20,6 +20,7 @@ START_AFTER=${START_AFTER:=0}
 echo $ALIAS
 #exit
 
+
 lxc exec ${ALIAS} -- sh -c "rndc sync -clean && rc-service named stop"
 
 d=( $(lxc exec ${ALIAS} -- find /var/bind -maxdepth 1 -name "db*") )

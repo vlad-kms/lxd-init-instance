@@ -1,50 +1,47 @@
 #!/bin/bash
 
-avail_dir="/opt/dev/ext/sites-available"
-enabled="/opt/dev/ext/sites-enabled"
+ng_fld_s_av=/etc/nginx/sites-available
+ng_fld_s_en=/etc/nginx/sites-enabled
 
-avail_dir="/etc/nginx/sites-available"
-enabled="/etc/nginx/sites-enabled"
+# pipe + args
+pp1=();pp1+=("$@")
+read -r -t .01 -a pp2
+pp1+=("${pp2[@]}")
 
-site=$(ls ${enabled})
-
-([[ -d "${avail_dir}"  ]] && [[ -d "${enabled}" ]]) || {
-    echo "Error!! Folders ${avail_dir} & ${enabled} not found."
-    exit 0
+[ "${#pp1[*]}" = "0" ] && {
+  echo "Use script: n2ensite site_config1 site_config2 ..."
+  exit 1
 }
-
-#enabled=/etc/nginx/sites-enabled
-#site=`ls /etc/nginx/sites-enabled`
-
-avail="${enabled}/$1"
-# проверить существование файла $1
-[[ ! -f ${avail} ]] && site_file="${1}.conf"
-avail="${enabled}/$1.conf"
-# проверить существование файла $1.conf
-[[ ! -f ${avail} ]] && {
-    echo "Error!!! Not available config file site"
-    echo "Use script: n2d site_config"
-    echo -e "\nAvailable configs:\n$site"
-    exit 0
-}
-
-
-if [ "$#" != "1" ]; then
-    echo "Use script: n2dissite site_config"
-    echo -e "\nEnabled configs: \n$site"
-    exit 0
+if test -d $ng_fld_s_av && test -d $ng_fld_s_en; then
+  echo "-------------------------------"
 else
-    if test -e $avail; then
-	    rm  $avail
-    else
-    	echo -e "$avail config does not exist! Exiting"
-	    exit 0
-    fi
-    if test -e $enabled/$1.conf; then
-    	echo "Error!! Could not remove $avail config!"
-    else
-	    echo  -e "Success! $avail has been removed!\nsudo systemctl reload nginx"
-        exit 0
-    fi
+  echo "Error. Folders ${ng_fld_s_av} or(and) ${ng_fld_s_en} not found"
+  exit 1
 fi
-exit 0
+
+is_restart_nginx=0 # флаг, требуется ли перезагрузить nginx.service
+num_all=0
+num_success=0
+for i in "${pp1[@]}"; do
+  #echo "$i"
+  if [[ "${i: -5}" != '.conf' ]]; then
+    current_conf="${i}.conf"
+  else
+    current_conf="${i}"
+  fi
+  while IFS= read -r -d '' file
+  do
+    num_all=$((num_all+1))
+    rm "$file"
+    echo "Disable sites in file conf: $file"
+    num_success=$((num_success+1))
+    is_restart_nginx=1
+  done <  <(find "$ng_fld_s_en" -name "$current_conf" -type l,f -print0)
+done
+# завершение и вывод предупреждающих сообщений
+if [ "$is_restart_nginx" != "0" ]; then
+  echo "All conf files: $num_all"
+  echo "Success: $num_success"
+  echo "For test nginx config: sudo nginx -t"
+  echo "Now reload nginx server: sudo systemctl reload nginx"
+fi
