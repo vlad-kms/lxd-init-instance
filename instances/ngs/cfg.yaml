@@ -2,19 +2,29 @@ config:
   environment.EDITOR: mcedit
   environment.ENV: /etc/profile
   boot.autostart.delay: 40
-  security.nesting: true
+  #security.nesting: true
   
   cloud-init.user-data: |
     #cloud-config
     timezone: Asia/Vladivostok
+    manage_resolv_conf: true
+    resolv_conf:
+      domain: home.lan
+      nameservers: [192.168.16.3, 192.168.15.3]
+      searchdomains: [home.lan, klinika.lan, mrovo.lan]
     package_upgrade: true
     packages:
+      - mc
       - openssh-server
-      - nagios4
-      - swaks
+      - apache2
+      - nagios
+      - nagios-plugins-all
+      - nagios-apache
+      - nagios-openrc
+      - nagios-web
       - curl
       - socat
-      - traceroute
+      #- traceroute
     write_files:
       - path: /root/.ssh/authorized_keys
         permissions: \"0600\"
@@ -34,6 +44,13 @@ config:
             command_name    check_nscp
             command_line    /usr/lib/nagios/plugins/check_nt -H '\$HOSTADDRESS\$' -p 12489 -v '\$ARG1\$' \$ARG2\$
           }
+    runcmd:
+      #- [rc-update, add, sysctl, default]
+      #- [rc-service, sysctl, start]
+      - [rc-update, add, sshd, default]
+      - [rc-update, add, apache2, default]
+      - [rc-update, add, nagios, default]
+      - [apk, cache, clean]
   cloud-init.network-config: |
     #cloud-config
     version: 2
@@ -45,11 +62,11 @@ config:
         nameservers:
           addresses:
             - 192.168.16.3
+            - 192.168.15.3
           search:
             - home.lan
-            - klinika.lan
           domain: home.lan
-        domain: home.lan
+        set-name: eth0
 profiles:
   - default
   - low_mem
