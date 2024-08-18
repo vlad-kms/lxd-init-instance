@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
 #set -o pipefail
 
 scr=$(echo $0 | sed -En "s/.*\/(.*)$/\1/p")
-file_log=/var/log/nagios4/${scr}.log
+file_log=/var/nagios/${scr}.log
 [[ ! -f "$file_log" ]] && {
     touch "$file_log"
 }
@@ -25,6 +25,7 @@ if [[ -n $6 ]]; then
     echo "6: $6" >> "$file_log"
     echo "7: $7" >> "$file_log"
     echo "8: $8" >> "$file_log"
+    echo "9: $9" >> "$file_log"
     echo "_CONTACTEMAIL: $_CONTACTEMAIL$" >> "$file_log"
     echo "NAGIOS_CONTACTEMAIL: $NAGIOS_CONTACTEMAIL" >> "$file_log"
     echo "LOGFILE: $LOGFILE$:123" >> "$file_log"
@@ -33,7 +34,7 @@ fi
 
 if [[ -z "$4$5" ]]; then
     echo "Missing arguments" >&2 >> "$file_log"
-    exit STATUS_CRITICAL
+    exit $STATUS_CRITICAL
 fi
 if [[ -z "$5" ]]; then
     SUBJECT=""
@@ -42,8 +43,9 @@ else
     SUBJECT="$5"
     MESSAGE="$4"
 fi
+hn=$(hostname)
 
-curlres=$(curl -s --header 'Content-Type: application/json' --request 'POST' --data "{\"chat_id\":\"${3}\",\"text\":\"${SUBJECT}\n${MESSAGE}\"}" "${APIURL}")
+curlres=$(curl -s --header 'Content-Type: application/json' --request 'POST' --data "{\"chat_id\":\"${3}\",\"text\":\"${hn} --- ${SUBJECT}\n${MESSAGE}\"}" "${APIURL}")
 curlerr="$?"
 if [[ $curlerr -ne 0 ]]; then
     echo "Curl error:$curlerr" >&2 >> "$file_log"
@@ -51,7 +53,7 @@ if [[ $curlerr -ne 0 ]]; then
 fi
 if [[ "$(echo "$curlres"|sed -En "s/^\{\"*ok\"*:([^,]*).*$/\1/p")" != "true" ]]; then
     echo "api.telegram error" >&2 >> "$file_log"
-    echo "cmd=curl -s --header 'Content-Type: application/json' --request 'POST' --data \"{\"chat_id\":\"${3}\",\"text\":\"${SUBJECT}\n${MESSAGE}\"}\" \"${APIURL}\"" >&2 >> "$file_log"
+    echo "cmd=curl -s --header 'Content-Type: application/json' --request 'POST' --data \"{\"chat_id\":\"${3}\",\"text\":\"${hn} --- ${SUBJECT}\n${MESSAGE}\"}\" \"${APIURL}\"" >&2 >> "$file_log"
     echo "result=$curlres" >&2 >> "$file_log"
       exit $STATUS_CRITICAL
 fi
