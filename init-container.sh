@@ -12,7 +12,6 @@ source ./functions/cipher.sh
 
 #source func-tm.sh
 
-
 #unset SCRIPT_NAME
 
 #############################################
@@ -41,7 +40,7 @@ declare -a array_env
 
 args=$(getopt -u -o 'a:bc:de:hi:nt:p:u:v:w:x' --long 'add,alias:,backup,config-dir:,cipher-file-dir:,cipher-file-name:,encode-file,decode-file,debug,delete,env:,help,image:,not-backup,pass-file:,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:,export' -- "$@")
 set -- $args
-debug $args
+debug "$args"
 i=0
 for i; do
     case "$i" in
@@ -56,11 +55,11 @@ for i; do
         '--debug-level')        DEBUG_LEVEL=$2;       shift 2;;
         '--decode-file')        action='dec_file';      shift;;
         '--encode-file')        action='enc_file';    shift;;
-        '-e' | '--env')         array_env+=( $2 );    shift 2;;
+        '-e' | '--env')         array_env+=( "$2" );    shift 2;;
         '-h' | '--help')        help; exit 0          ;;
         '-i' | '--image')       arg_image_name=${2};  shift 2;;
         '-n' | '--not-backup')  NOT_BACKUP_BEFORE_DELETE=1; shift;;
-        '-p' | '--pass_file')   pass_file=${2};       shift 2;; 
+        '-p' | '--pass_file')   pass_file="${2}";       shift 2;; 
         '-t' | '--timeout')     TIMEOUT=${2};         shift 2;;
         '-u' | '--vaults')      VAULTS_NAME=${2};     shift 2;;
         '-v' | '--vars')        VARS_NAME=${2};       shift 2;;
@@ -115,7 +114,7 @@ else
   ### если определен --alias
   CONFIG_DIR_NAME=${CONTAINER_NAME}
   [[ -n "${CONTAINER_NAME}" ]] && dir_cfg=${CONTAINER_NAME}
-  [[ -n $dir_cfg ]] && dir_cfg=$(find_dir_in_location $dir_cfg)
+  [[ -n $dir_cfg ]] && dir_cfg=$(find_dir_in_location "$dir_cfg")
   ### если нет каталога с именем контейнера, то попробовать каталог general
   if [[ -z $dir_cfg ]]; then
     dir_cfg=$(find_dir_in_location general)
@@ -127,7 +126,7 @@ fi
 ### теперь $dir_cfg - каталог, где надо брать конфигурацию инстанса
 ### Проверить что $dir_cfg существует и является каталогом
 ### Если нет, то ошибка и прервать скрипт
-if ! ([[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]); then
+if ! { [[ -n "$dir_cfg" ]] && [[ -d "$dir_cfg" ]]; }; then
   break_script ${ERR_BAD_ARG}
 fi
 
@@ -140,33 +139,51 @@ global_vars=${0}.conf
 ### ${dir_cfg}/${DEF_VARS_CONF} (vars.conf)
 project_vars="${dir_cfg}/${DEF_VARS_CONF}"
 # shellcheck source=functions/${project_vars}
-[[ -f ${project_vars} ]] && source ${project_vars} || unset project_vars
+if [[ -f ${project_vars} ]]; then
+  # shellcheck disable=SC2086
+  # shellcheck disable=SC1091
+  source ${project_vars}
+else
+  project_vars
+fi
 ### Если передали -v (--vars), то подгружаем переменные из файла переданного в этом параметре
 arg_vars="${VARS_NAME}"
 ### Проверить что $arg_vars является файлом, если передан как аргумент
 ### Если не файл,но передан в аргументе, то ошибка и прервать скрипт
-if ([[ -n "$arg_vars" ]] && [[ ! -f "$arg_vars" ]]);then
-  break_script ${ERR_BAD_ARG_FILE_VARS_NOT}
+if { [[ -n "$arg_vars" ]] && [[ ! -f "$arg_vars" ]]; }; then
+  break_script ${ERR_BAD_ARG_FILE_VARS_NOT} ". Аргумент -v (--vars) ${arg_vars}"
 fi
 # shellcheck source=functions/${arg_vars}
-[[ -f ${arg_vars} ]] && source ${arg_vars} || unset arg_vars
+if [[ -f ${arg_vars} ]]; then
+  source ${arg_vars}
+else
+  unset arg_vars
+fi
 
 ### Теперь подгружаем секретные переменные из каталога с конфигурацией инстанса
 ### ${dir_cfg}/${DEF_VARS_VAULT} (vars.vault)
 project_vault="${dir_cfg}/${DEF_VARS_VAULT}"
 # shellcheck source=functions/${project_vault}
-[[ -f ${project_vault} ]] && source ${project_vault} || unset project_vault
+if [[ -f ${project_vault} ]]; then
+  source ${project_vault}
+else
+  unset project_vault
+fi
 arg_vault="${VAULTS_NAME}"
 ### Проверить что $arg_vault является файлом, если передан как аргумент
 ### Если не файл, но передан в аргументе, то ошибка и прервать скрипт
-if ([[ -n "$arg_vault" ]] && [[ ! -f "$arg_vault" ]]);then
-  break_script ${ERR_BAD_ARG_FILE_SECRET_VARS_NOT}
+if { [[ -n "$arg_vault" ]] && [[ ! -f "$arg_vault" ]]; }; then
+  break_script ${ERR_BAD_ARG_FILE_SECRET_VARS_NOT} ". Аргумент -u (--vaults) ${arg_vault}"
 fi
 # shellcheck source=functions/${arg_vault}
-[[ -f ${arg_vault} ]] && source ${arg_vault} || unset arg_vault
+if [[ -f ${arg_vault} ]]; then
+  source ${arg_vault}
+else
+  unset arg_vault
+fi
 
 ### Теперь заменяем переменные, значениями переданными через командную строку (-e, --env)
-for t in ${array_env[@]}; do
+for t in "${array_env[@]}"; do
   eval $t
 done
 
@@ -181,7 +198,11 @@ config_file="$(last_char_dir ${dir_cfg})${DEF_CFG_YAML}"
 [[ -f ${config_file} ]] || unset config_file
 ### если файл cfg есть, то инит confgi_file_render,
 ### иначе очистить confgi_file_render
-[[ -f ${config_file} ]] && config_file_render="${config_file}${POSTFIX_CFG_YAML_RENDER}" || unset config_file_render
+if [[ -f ${config_file} ]]; then
+  config_file_render="${config_file}${POSTFIX_CFG_YAML_RENDER}"
+else
+  unset config_file_render
+fi
 # 104   - Не существует файл конфигурации контейнера
 ### Выход, если не существует файла конфигурации контейнера
 [[ -f ${config_file} ]] || {
@@ -208,11 +229,11 @@ where_copy=${where_copy:=${pref}${DEF_WHERE_COPY}}
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # добавить имя контейнера к пути бэкапа
-[ ${use_name} -ne 0 ] && where_copy="${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})"
+[ "${use_name}" -ne 0 ] && where_copy="${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})"
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # ошибка, если файл существует и не является каталогом
-( [[  -a $f ]] && [[ ! -d $f ]] ) && break_script $ERR_NOT_DIR_WHERE_COPY
+{ [[  -a $where_copy ]] && [[ ! -d $where_copy ]]; } && break_script $ERR_NOT_DIR_WHERE_COPY
 # последний символ д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" add)
 
@@ -245,7 +266,7 @@ debug "arg_vars:----------- ${arg_vars}"
 debug "project_vault:------ ${project_vault}"
 debug "arg_vault:---------- ${arg_vault}"
 debug "size array_env:----- ${#array_env[@]}"
-for t in ${array_env[@]}; do
+for t in "${array_env[@]}"; do
   debug "array_env[]:-------- ${t}"
   #eval $t
 done
@@ -292,19 +313,19 @@ case "$action" in
       if [[ "${cipher_file_name}" == "${DEF_CIPHER_FILE_NAME}" ]]; then
         cipher_file_name="${cipher_file_name}-enc"
       fi
-      arr_files=$(find ${cipher_file_dir} -type f -name ${cipher_file_name})
-      for item in ${arr_files[*]}; do
+      arr_files=$(find "${cipher_file_dir}" -type f -name "${cipher_file_name}")
+      for item in "${arr_files[@]}"; do
         decode_file "${item}" "${item::-4}";
-        debug $item
+        debug "$item"
       done
     }
     ;;
   'enc_file') {
       echo "Action: enc_file"
-      arr_files=$(find ${cipher_file_dir} -type f -name ${cipher_file_name})
-      for item in ${arr_files[*]}; do
+      arr_files=$(find "${cipher_file_dir}" -type f -name "${cipher_file_name}")
+      for item in "${arr_files[@]}"; do
         encode_file "${item}" "${item}-enc";
-        debug $item
+        debug "$item"
       done
     }
     ;;

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
 source ./functions/hook.sh || source ./hook.sh
 
 ########################################
@@ -12,6 +13,7 @@ create_container() {
     exit 110
   fi
   if [[ -z $2 ]]; then
+    # shellcheck disable=SC2154
     "$lxc_cmd" init "$1" | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   else
     "$lxc_cmd" init "$1" < "$2" | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
@@ -24,11 +26,13 @@ create_container() {
 add_instance() {
   before_init_container=${before_init_container:='before_init_container'}
   debug "=== Ловушка перед инициализацией инстанса: $before_init_container"
+  # shellcheck disable=SC2154
   hook_dispath "$hooks_file" "${before_init_container}"
   if [[ -n ${config_file} ]]; then
     ### Есть файл config.yaml для инстанса
     if [[ -z $CONTAINER_NAME ]]; then
       ### здесь запуск анонимного инстанса
+      # shellcheck disable=SC2154
       debug "--- Запуск анонимного инстанса: ${lxc_cmd} launch ${IMAGE_NAME} < ${config_file_render}. Затем сразу выход"
       #${lxc_cmd} launch ${IMAGE_NAME} < "${config_file_render}"
       CONTAINER_NAME=$(create_container "${IMAGE_NAME}" "${config_file_render}")
@@ -82,7 +86,8 @@ add_instance() {
   if [[ -d "${dir_cfg}/${DEF_FILES}" ]]; then
     debug "--- Работа с файлами"
     op=$(pwd)
-    cd "${dir_cfg}/${DEF_FILES}"
+    cd "${dir_cfg}/${DEF_FILES}" || exit 1
+    #cd "${dir_cfg}/${DEF_FILES}" || break_script "${}"
     find . -name "*" -type f -print0 | xargs -I {} -r0 "${lxc_cmd}" file push -p {} "${CONTAINER_NAME}/{}"
     ### Выход если ошибка копирования файлов из ${DEF_FILES} в $CONTAINER_NAME/files
     ret=$?
@@ -115,11 +120,16 @@ add_instance() {
     find . -name "*" -type f -print | sed 's/^\.\///' > "${tmpfile}"
     ### создать дерево каталогов в подготовленных шаблонах аналогичное в шаблонах
     cp -r --force ./* "${dtr}"
-    cat "${tmpfile}" | while read item
+    #cat "${tmpfile}" | while read item
+    #do
+    #  #debug "--- rendering template item: $item"
+    #  template_render "$item" > "${dtr}/$item"
+    #done
+    while IFS= read -r item
     do
       #debug "--- rendering template item: $item"
       template_render "$item" > "${dtr}/$item"
-    done
+    done < "${tmpfile}"
     rm "${tmpfile}"
     ### копировать файлы рендерированных шаблонов
     cd "$dtr" ||  { echo "Not exists directory \"${dtr}\""; exit 1; }
@@ -157,6 +167,7 @@ add_instance() {
 
   ### Если существует cloud-init, то ожидать пока cloud-init завершит работу (статус == done)
   if [[ ${DEBUG} -eq 0 ]]; then
+    # shellcheck disable=SC2034
     ss=$(${lxc_cmd} exec "${CONTAINER_NAME}" -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait")
   else
     ${lxc_cmd} exec "${CONTAINER_NAME}" -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"

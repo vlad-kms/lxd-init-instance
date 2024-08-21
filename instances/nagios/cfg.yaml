@@ -11,7 +11,7 @@ config:
     packages:
       - openssh-server
       - nagios4
-      - swaks
+      #- swaks
       - curl
       - socat
       - traceroute
@@ -55,4 +55,4 @@ profiles:
   - low_mem
   - low_cpu
   - $NET_INSTANCE
-  - autostart
+  #- autostart

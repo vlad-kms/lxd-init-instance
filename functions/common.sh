@@ -52,7 +52,11 @@ debug() {
 ########################################
 break_script() {
   item_msg_err "$1"
-  [[ -z $2 ]] || echo "$2"
+  if [[ -z $2 ]]; then
+    echo
+  else
+    echo "$2"
+  fi
   exit "$1"
 }
 
@@ -269,6 +273,7 @@ test_common() {
   #restart_instance "lxd-dev:tst23"
   #restart_instance "ns3"
   
+
   #get_part_from_container_name 'lxd:con'
 }
 
