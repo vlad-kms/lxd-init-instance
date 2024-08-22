@@ -70,8 +70,13 @@ for i; do
         else)                   help; exit 0          ;;
     esac
 done
+# новый разбор аргументов
+first_arg=$1
+
+
 ### --timeout, по-умолчанию = 60 сек
 TIMEOUT=${TIMEOUT:=60}
+### --action, по-умолчанию = add
 action=${action:="add"}
 
 ### --pass_file (-p) начальная инициализация cipher шифрования
@@ -85,6 +90,7 @@ if [ "${DEBUG}" -eq 0 ]; then
   lxc_cmd="${lxc_cmd} -q"
 else
   if [ "$DEBUG_LEVEL" -eq "1" ]; then
+    # shellcheck disable=SC2269
     lxc_cmd="${lxc_cmd}"
   elif [ "${DEBUG_LEVEL}" -eq "2" ]; then
     lxc_cmd="${lxc_cmd} --debug"
@@ -134,6 +140,7 @@ fi
 ### Сначала из файла ИМЯСКРИПТА.conf
 global_vars=${0}.conf
 # shellcheck source=functions/${global_vars}
+# shellcheck disable=SC1091
 [[ -f "${global_vars}" ]] && source "${global_vars}"
 ### Теперь подгружаем переменные из каталога с конфигурацией инстанса
 ### ${dir_cfg}/${DEF_VARS_CONF} (vars.conf)
@@ -155,6 +162,8 @@ if { [[ -n "$arg_vars" ]] && [[ ! -f "$arg_vars" ]]; }; then
 fi
 # shellcheck source=functions/${arg_vars}
 if [[ -f ${arg_vars} ]]; then
+  # shellcheck disable=SC1091
+  # shellcheck disable=SC2086
   source ${arg_vars}
 else
   unset arg_vars
@@ -165,6 +174,8 @@ fi
 project_vault="${dir_cfg}/${DEF_VARS_VAULT}"
 # shellcheck source=functions/${project_vault}
 if [[ -f ${project_vault} ]]; then
+  # shellcheck disable=SC1091
+  # shellcheck disable=SC2086
   source ${project_vault}
 else
   unset project_vault
@@ -223,13 +234,13 @@ script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
 
 ### местоположение куда копировать бэкапы
-[ $use_dir_cfg -ne 0 ] && pref="${dir_cfg}/" || pref=""
+[[ $use_dir_cfg -ne 0 ]] && pref="${dir_cfg}/" || pref=""
 where_copy=${where_copy:=${pref}${DEF_WHERE_COPY}}
 [[ -n $arg_where_copy ]] && where_copy=${arg_where_copy}
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # добавить имя контейнера к пути бэкапа
-[ "${use_name}" -ne 0 ] && where_copy="${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})"
+[[ ${use_name} -ne 0 ]] && where_copy="${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})"
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # ошибка, если файл существует и не является каталогом
@@ -279,7 +290,7 @@ debug "--------------------------------- argumentes"
 template_render "$config_file" > "$config_file_render"
 
 ### выход, не выполняя никаких фактичеких действий с LXD
-[ $DEBUG_LEVEL -ge 100 ] && exit 0
+[[ $DEBUG_LEVEL -ge 100 ]] && exit 0
 
 ### НАЧАЛО РАБОТЫ С lxc container
 
