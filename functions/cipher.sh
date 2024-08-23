@@ -24,10 +24,10 @@ not_provider() {
     CIPHER_CMD_DECODE=''
     CIPHER_BASE64=''
     CIPHER_PBKDF2=''
-    a=$(cat $gitig | sed -n -e '/secrets/p')
-    if [[ -f $gitig ]] && [[ -z $a ]]; then
-        echo >> $gitig
-        echo "**secrets" >> $gitig
+    a=$(sed -n -e '/secrets/p' "$gitig")
+    if [[ -f "$gitig" ]] && [[ -z $a ]]; then
+        echo >> "$gitig"
+        echo "**secrets" >> "$gitig"
     fi
 }
 
@@ -227,4 +227,4 @@ line2"
     decode_file "${fl}.enc" "${fl}.enc.dec"
     cat "${fl}.enc.dec"
 }
-test_cipher
+#test_cipher

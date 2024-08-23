@@ -299,7 +299,14 @@ where_copy=${where_copy:=${pref}${DEF_WHERE_COPY}}
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # добавить имя контейнера к пути бэкапа
-[[ ${use_name} -ne 0 ]] && where_copy="${where_copy}/$(get_part_from_container_name "${CONTAINER_NAME}" h)-$(get_part_from_container_name "${CONTAINER_NAME}")"
+if [[ ${use_name} -ne 0 ]]; then
+  lxd_host=$(get_part_from_container_name "${CONTAINER_NAME}" h)
+  if [[ -z "$lxd_host" ]]; then
+    where_copy="${where_copy}/$(get_part_from_container_name "${CONTAINER_NAME}")"
+  else
+    where_copy="${where_copy}/${lxd_host}-$(get_part_from_container_name "${CONTAINER_NAME}")"
+  fi
+fi
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # ошибка, если файл существует и не является каталогом
