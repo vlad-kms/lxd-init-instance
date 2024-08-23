@@ -1,7 +1,7 @@
 #!/bin/sh
 
 after_init_container() {
-  echo "DISPATH HOOK: after_init_container"
+  debug "DISPATH HOOK: after_init_container"
 }
 
 after_start() {
@@ -40,3 +40,10 @@ after_start() {
   echo "DISPATH HOOK LEAVE: Run ${0}:hook-afterstart::after_start"
 }
 
+before_export() {
+  debug "BEFORE_EXPORT"
+}
+
+after_export() {
+  debug "AFTER_EXPORT"
+}

@@ -264,7 +264,9 @@ last_char_dir() {
   }
   s=${1}
   l=${#s}
+  # если не передан $2 (действие), то устанвливается в add
   act=$2; act=${act:='add'}
+  # если передан $2 (действие) не равный add, del или get, то устанвливается в add
   { { [ "$act" == "add" ] || [ "$act" == "del" ]; } || [ "$act" == "get" ]; } || act='add'
   case "$act" in
     add)
@@ -279,7 +281,6 @@ last_char_dir() {
     get)
       echo "${s: -1}"
       ;;
-    *) break_script "${ERR_BAD_ACTION_LASTCHAR_DIR}" ;;
   esac
   echo "${s}"
 }

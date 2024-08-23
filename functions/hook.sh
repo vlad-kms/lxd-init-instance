@@ -21,7 +21,9 @@
 #########################################################################
 hook_dispath() {
   local script_file=''
-  local script_dir=$(last_char_dir ${dir_cfg})
+  # shellcheck disable=SC2155
+  # shellcheck disable=SC2154
+  local script_dir=$(last_char_dir "${dir_cfg}")
   local c=$#;
   local func=''
   if (( $c >= 2 )); then
@@ -37,7 +39,7 @@ hook_dispath() {
   # сохранить ИмяФункции 
   # если не существует файла  $script_file,
   # то проверить второй аргумент как файл скрипта
-  func_arg=${func}
+  #func_arg=${func}
   [[ ! -f $script_file ]] && {
     script_file="${script_dir}${func}"
     unset func
@@ -48,6 +50,8 @@ hook_dispath() {
   }
 
   # подключить файл с ловушками, если он передан и существует
+  # shellcheck disable=SC2086
+  # shellcheck disable=SC1090
   source $script_file
 
   if [[ -n ${func} ]]; then

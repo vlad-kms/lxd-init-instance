@@ -27,11 +27,13 @@ export_instance() {
 
   # shellcheck disable=SC2154
   debug "$lxc_cmd export ${CONTAINER_NAME} ${archive_name}"
+  if [[ $DEBUG_LEVEL -lt 90 ]]; then
+    [[ $is_running -eq 1 ]] && $lxc_cmd stop "${CONTAINER_NAME}"
+    $lxc_cmd export "${CONTAINER_NAME}" "${archive_name}" 2>null
+  fi
   # shellcheck disable=SC2154
   debug "mv -f -t ${where_copy} ${archive_name}"
   if [[ $DEBUG_LEVEL -lt 90 ]]; then
-    [[ $is_running -eq 1 ]] && $lxc_cmd stop "${CONTAINER_NAME}"
-    $lxc_cmd export "${CONTAINER_NAME}" "${archive_name}"
     [[ -e ${where_copy} ]] || mkdir -p "${where_copy}"
     mv -f -t "${where_copy}" "${archive_name}"
     [[ $is_running -eq 1 ]] && $lxc_cmd start "${CONTAINER_NAME}"
