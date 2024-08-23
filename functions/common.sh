@@ -7,32 +7,59 @@
 #############################################
 help() {
   echo "
-  Аргументы запуска:
-        --add                   - действие 'add', создать новый контейнер
+  Использование:
+    init-container.sh command options
+    Команды:
+    add       - создать новый контейнер.
+    backup    - резервная копия данных из контейнера.
+    delete    - удалить контейнер.
+    dec-file  - дешифровать файл \"FileName-enc\" и сохранить в \"FileName\".
+    enc-file  - шифровать файл \"FileName\" и сохранить в \"FileName-enc\".
+    export    - экспорт образ контейнера.
+      OR
+    вместо первого формата можно использовать опции, соответствующие командам.
+    Можно использовать только один из форматов передачи команды.
+    Опции соответствующие командам:
+        --add           - команда add
+    -b, --backup        - команда backup
+    -d, --delete        - команда delete
+        --decode-file   - команда dec_file
+        --encode-file   - команда enc_file
+    -x, --export        - команда export
+
+    Опции для команд:
     -a, --alias AliasName       - имя (alias) контейнера
-    -b, --backup                - действие 'backup', копия данных из контейнера
-    -c, --config-dir DirConf    - каталог с файлами конфигурации и инициализации контейнера
+                                  актуально для команд: add, backup, delete, export
+    -c, --config-dir DirConf    - каталог с файлами конфигурации, инициализации контейнера, различных скриптов и ловушек для контейнера.
+                                  По-умолчанию = ./instances/AliasName
+                                  актуально для команд: add, backup, export, delete
     --cipher-file-dir           - начальный каталог для поиска файлов для шифрования
     --cipher-file-name          - маска файлов для поиска
-    -d, --delete                - действие 'delete', удалить контейнер
         --debug                 - выводить отладочную информацию
         --debug-level Number    - уровень отладочной информации
-        --decode-file           - дешифровать файл \"FileName-enc\" и сохранить в \"FileName\"
-        --encode-file           - шифровать файл \"FileName\" и сохранить в \"FileName-enc\"
     -e, --env EnvName=EnvValue  - значения для переопределния переменных в файлах конфигурации
     -h, --help                  - вызов справки
-    -i, --image InageName       - образ, с которого создать контейнер
+    -i, --image ImageName       - образ, с которого создать контейнер
+                                  актуально для команд: add
     -n, --not-backup            - если =0, то бэкап перед удалением контейнера, иначе нет бэкапа. По-умолчанию: 0.
+                                  актуально для команд: backup
     -p, --pass_file             - файл с паролем. Действительна только первая строка. По-умолчанию: ./secrets/cipher_pass 
     -t, --timeout Number        - период ожидания в сек
     -u, --vaults FileName       - файл со значениями секретных переменных для сборки контейнера, которые не хранятся в git
+                                  актуально для команд: add
     -v, --vars FileName         - файл со значениями переменных для сборки контейнера, которые хранятся в git
+                                  актуально для команд: add
     -w, --where-copy DirName    - куда сделать бэкап данных из контейнера
-    --use-name Number           - <>0 - добавлять в конце к каталогу where_copy имя контейнера
-                                  иначе не добавлять. По-умолчанию = 1
-    --use-dir_cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY dir_cfg, т.е. каталог будет dir_cfg/DEF_WHERE_COPY),
-                                  иначе не добавлять. По-умолчанию = 0
-    -x, --export                - экспорт образ контейнера
+                                  актуально для команд: backup
+    --use-name Number           - <>0 - добавлять в конце к каталогу where_copy имя контейнера (where_copy/AliasName), 
+                                  иначе не добавлять (where_copy/).
+                                  По-умолчанию = 1
+                                  актуально для команд: backup
+    --use-dir-cfg Number        - <>0 - добавлять в начале к каталогу $DEF_WHERE_COPY dir_cfg,
+                                  т.е. каталог с резервной копией будет размещен внутри каталога с настройками dir_cfg/DEF_WHERE_COPY,
+                                  иначе не добавлять.
+                                  По-умолчанию = 0
+                                  актуально для команд: backup
   "
 }
 
@@ -89,11 +116,10 @@ state_instance() {
     echo 'NOT_EXISTS'
     return 0
   }
-  ret=$(lxc info "$1" 2> /dev/null | grep 'Status:')
-  [[ $? -ne 0 ]] && {
+  if ! ret=$(lxc info "$1" 2> /dev/null | grep 'Status:'); then
     echo 'NOT_EXISTS'
     return 0
-  }
+  fi
   echo "$ret" | sed -n -e 's/Status:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   return 1
 }
@@ -258,6 +284,11 @@ last_char_dir() {
   echo "${s}"
 }
 
+_startswith() {
+  _str="$1"
+  _sub="$2"
+  echo "$_str" | grep -- "^$_sub" >/dev/null 2>&1
+}
 
 
 ###########################################################
@@ -268,6 +299,7 @@ last_char_dir() {
 ###########################################################
 test_common() {
   # shellcheck source-path=SCRIPTDIR
+  # shellcheck disable=SC1091
   source functions/global_vars.sh || source global_vars.sh
 
   #restart_instance "lxd-dev:tst23"
@@ -275,6 +307,12 @@ test_common() {
   
 
   #get_part_from_container_name 'lxd:con'
+
+  if ! _startswith "$1" '-'; then
+    echo "is NO"
+  else
+    echo 'is -'
+  fi
 }
 
 #test_common

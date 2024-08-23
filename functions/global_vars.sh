@@ -36,6 +36,7 @@ msg_arr[${ERR_NOT_DIR_WHERE_COPY}]="Место куда складывать б�
 # shellcheck disable=SC2154
 msg_arr[${ERR_BAD_ACTION_LASTCHAR_DIR}]="Неверное действие \"${act}\" с последним символом в имени каталога"
 msg_arr[${ERR_DELETE_CONTAINER=140}]="Ошибка при удалениии контейнера \"${CONTAINER_NAME}\""
+msg_arr[${ERR_BAD_ARG_COMMON=106}]="Неверные аргументы."
 
 # shellcheck disable=SC2034
 lxc_cmd=lxc

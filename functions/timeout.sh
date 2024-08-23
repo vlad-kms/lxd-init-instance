@@ -10,14 +10,15 @@ test_cloud_init_status() {
 # 1 - иначе 
   st=$2
   st=${st:=done}
-  r=$(${lxc_cmd} exec $1 -- cloud-init status --long)
+  # shellcheck disable=SC2154
+  r=$("${lxc_cmd}" exec "$1" -- cloud-init status --long)
   if [[ "$?" != "0" ]]; then
     # если ошибка образения к инстансу
     return 1
   fi
   r=$(echo $r | grep -e "^status:" | cut -c 9-12)
   if [[ "$?" != "0" ]] ; then
-    # ошибка выполнеия вырезки и сравнения строки
+    # ошибка выполнения вырезки и сравнения строки
     return 1
   fi
   if [[ "$r" == "$st" ]]; then
@@ -38,7 +39,7 @@ status_cloud_init_tm(){
   x=1
   while [ ! $res -eq 0 ]
   do
-    sd=`date`
+    sd=$(date)
     debug "${sd}"
     sleep 3
     x=$(( $x + 3 ))

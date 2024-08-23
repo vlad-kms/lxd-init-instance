@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# shellcheck disable=SC1091
 source ./functions/global_vars.sh
 #source ./functions/common.sh
 
@@ -17,7 +18,9 @@ not_provider() {
     CIPHER_CMD=''
     CIPHER_ALGO=''
     CIPHER_SALT=''
+    # shellcheck disable=SC2034
     CIPHER_CMD_ENCODE=''
+    # shellcheck disable=SC2034
     CIPHER_CMD_DECODE=''
     CIPHER_BASE64=''
     CIPHER_PBKDF2=''
@@ -86,13 +89,14 @@ encode_str() {
         return
     }
     if [[ -z $2 ]]; then
+        # shellcheck disable=SC2155
         local pw=$(get_password_key)
     else
         local pw=$2
     fi
-    enc_str=$(echo $1 | ${CIPHER_CMD} ${CIPHER_ENCODE} ${CIPHER_ALGO} ${CIPHER_SALT} ${CIPHER_BASE64} ${CIPHER_PBKDF2} -k $pw)
+    enc_str=$(echo "$1" | ${CIPHER_CMD} "${CIPHER_ENCODE}" "${CIPHER_ALGO}" "${CIPHER_SALT}" "${CIPHER_BASE64}" "${CIPHER_PBKDF2}" -k "$pw")
     #enc_str=$(echo $1 | ${CIPHER_CMD} ${CIPHER_ALGO} ${CIPHER_SALT} ${CIPHER_ENCODE} ${CIPHER_BASE64} ${CIPHER_PBKDF2} -kfile $file_pass)
-    echo $enc_str
+    echo "$enc_str"
 }
 
 ##################################################
@@ -112,12 +116,13 @@ decode_str() {
         return
     }
     if [[ -z $2 ]]; then
+        # shellcheck disable=SC2155
         local pw=$(get_password_key)
     else
         local pw=$2
     fi
-    enc_str=$(echo $1 | ${CIPHER_CMD} ${CIPHER_DECODE} ${CIPHER_ALGO} ${CIPHER_SALT} ${CIPHER_BASE64} ${CIPHER_PBKDF2} -k $pw)
-    echo $enc_str
+    enc_str=$(echo "$1" | ${CIPHER_CMD} "${CIPHER_DECODE}" "${CIPHER_ALGO}" "${CIPHER_SALT}" "${CIPHER_BASE64}" "${CIPHER_PBKDF2}" -k "$pw")
+    echo "$enc_str"
 }
 
 ##################################################
@@ -132,22 +137,23 @@ decode_str() {
 encode_file() {
     [[ "$USE_CIPHER" == "0" ]] && {
         echo "Не инициализировали библиотеку шифрования, или она не установлена в системе" 1>&2
-        return
+        return 1
     }
     [[ -f $1 ]] || {
         echo "Нет файла для шифрования" 1>&2
-        return
+        return 1
     }
-    ([[ -e $2 ]] && [[ ! -f $2 ]]) && {
+    { [[ -e $2 ]] && [[ ! -f $2 ]]; } && {
         echo "Невозможно записать зашифрованный файл" 1>&2
-        return
+        return 1
     }
     if [[ -z $3 ]]; then
+        # shellcheck disable=SC2155
         local pw=$(get_password_key)
     else
         local pw=$2
     fi
-    ${CIPHER_CMD} ${CIPHER_ENCODE} ${CIPHER_ALGO} ${CIPHER_SALT} ${CIPHER_BASE64} ${CIPHER_PBKDF2} -k $pw -in $1 -out $2
+    ${CIPHER_CMD} "${CIPHER_ENCODE}" "${CIPHER_ALGO}" "${CIPHER_SALT}" "${CIPHER_BASE64}" "${CIPHER_PBKDF2}" -k "$pw" -in "$1" -out "$2"
 }
 
 ##################################################
@@ -162,22 +168,23 @@ encode_file() {
 decode_file() {
     [[ "$USE_CIPHER" == "0" ]] && {
         echo "Не инициализировали библиотеку шифрования, или она не установлена в системе" 1>&2
-        return
+        return 1
     }
     [[ -f $1 ]] || {
         echo "Нет файла для шифрования" 1>&2
-        return
+        return 1
     }
-    ([[ -e $2 ]] && [[ ! -f $2 ]]) && {
+    { [[ -e $2 ]] && [[ ! -f $2 ]]; } && {
         echo "Невозможно записать зашифрованный файл" 1>&2
-        return
+        return 1
     }
     if [[ -z $3 ]]; then
+        # shellcheck disable=SC2155
         local pw=$(get_password_key)
     else
         local pw=$2
     fi
-    ${CIPHER_CMD} ${CIPHER_DECODE} ${CIPHER_ALGO} ${CIPHER_SALT} ${CIPHER_BASE64} ${CIPHER_PBKDF2} -k $pw -in $1 -out $2
+    ${CIPHER_CMD} "${CIPHER_DECODE}" "${CIPHER_ALGO}" "${CIPHER_SALT}" "${CIPHER_BASE64}" "${CIPHER_PBKDF2}" -k "$pw" -in "$1" -out "$2"
 }
 
 ##################################################
@@ -189,7 +196,8 @@ get_password_key() {
         echo ''
         return 0
     }
-    echo $(sed -n '1p' $file_pass)
+    #echo $(sed -n '1p' $file_pass)
+    sed -n '1p' "$file_pass"
 }
 
 
@@ -198,24 +206,25 @@ get_password_key() {
 test_cipher() {
     source ./functions/global_vars.sh
     source ./functions/common.sh
+    # shellcheck disable=SC2034
     DEBUG=1
     file_pass="pw.vault"
 
     init_cipher
     str="qwerty
 line2"
-    echo -e $str
+    echo -e "$str"
     echo
     e_s=$(encode_str "$str")
-    echo -e $e_s
+    echo -e "$e_s"
     echo
     d_s=$(decode_str "$e_s")
-    echo -e $d_s
+    echo -e "$d_s"
     fl='test/file_test'
-    cat $fl
-    encode_file $fl ${fl}.enc
-    cat ${fl}.enc
-    decode_file ${fl}.enc ${fl}.enc.dec
-    cat ${fl}.enc.dec
+    cat "$fl"
+    encode_file "$fl" "${fl}.enc"
+    cat "${fl}.enc"
+    decode_file "${fl}.enc" "${fl}.enc.dec"
+    cat "${fl}.enc.dec"
 }
-#test_cipher
+test_cipher

@@ -28,56 +28,109 @@ on_error() {
   exit 1
 }
 
+#############################################
+# 
+#############################################
+set_action() {
+  if [[ -z $1 ]]; then
+    return 0
+  fi
+  if [[ -n $action ]]; then
+    help
+    break_script "$ERR_BAD_ARG_COMMON" " Не может быть задано два действия в одном запуске (1-е) ${1}; (2-е) ${action}"
+  fi
+  action="$1"
+}
+
 ####################################################################################
 # СКРИПТ
 ####################################################################################
 
-#a=( 6/2 )
-#echo $a
-#exit
-
 declare -a array_env
+# массив всех доступных action
+actions=(add backup dec_file delete enc_file export)
 
-args=$(getopt -u -o 'a:bc:de:hi:nt:p:u:v:w:x' --long 'add,alias:,backup,config-dir:,cipher-file-dir:,cipher-file-name:,encode-file,decode-file,debug,delete,env:,help,image:,not-backup,pass-file:,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:,export' -- "$@")
+
+# новый разбор аргументов. Теперь если первый аргумент не начинается с '-', то это action, осталное опции для action
+# action: add, backup, delete, decode-file, encode-file, export
+#args=$@
+if ! _startswith "$1" '-'; then
+  # здесь 1-й аргумент не начинается с '-', т.е. здесь первый аргумент, все остальное опции
+  action="$1"
+  shift
+else
+  action=''
+fi
+
+#args=$(getopt -u -o 'a:bc:de:hi:nt:p:u:v:w:x' --long 'add,alias:,backup,config-dir:,cipher-file-dir:,cipher-file-name:,encode-file,decode-file,debug,delete,env:,help,image:,not-backup,pass-file:,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use_dir_cfg:,export' -- "$@")
+if ! args=$(getopt -u -o 'a:bc:de:hi:nt:p:u:v:w:x' --long 'add,alias:,backup,config-dir:,cipher-file-dir:,cipher-file-name:,encode-file,decode-file,debug,delete,env:,help,image:,not-backup,pass-file:,timeout:,vaults:,vars:,where-copy:,debug-level:,use-name:,use-dir-cfg:,export' -- "$@"); then
+  help;
+  exit 1
+fi
+
+# shellcheck disable=SC2086
 set -- $args
 debug "$args"
 i=0
 for i; do
     case "$i" in
-        '--add')                action="add";         shift;;
+        '--add')
+            set_action 'add';
+            shift;;
         '-a' | '--alias')       CONTAINER_NAME=${2};  shift 2;;
-        '-b' | '--backup')      action="backup";      shift;;
+        '-b' | '--backup')
+            set_action 'backup'
+            shift;;
         '-c' | '--config-dir')  CONFIG_DIR_NAME=${2}; shift 2;;
         '--cipher-file-dir')    cipher_file_dir=${2}; shift 2;;
         '--cipher-file-name')   cipher_file_name=${2};shift 2;;
         '-d' | '--delete')      action="delete";      shift;;
         '--debug')              DEBUG=1;              shift;;
         '--debug-level')        DEBUG_LEVEL=$2;       shift 2;;
-        '--decode-file')        action='dec_file';      shift;;
-        '--encode-file')        action='enc_file';    shift;;
+        '--decode-file')
+            set_action 'dec_file'
+            shift;;
+        '--encode-file')
+            set_action 'enc_file'
+            shift;;
         '-e' | '--env')         array_env+=( "$2" );    shift 2;;
         '-h' | '--help')        help; exit 0          ;;
         '-i' | '--image')       arg_image_name=${2};  shift 2;;
         '-n' | '--not-backup')  NOT_BACKUP_BEFORE_DELETE=1; shift;;
-        '-p' | '--pass_file')   pass_file="${2}";       shift 2;; 
+        '-p' | '--pass_file')   pass_file="${2}";     shift 2;; 
         '-t' | '--timeout')     TIMEOUT=${2};         shift 2;;
         '-u' | '--vaults')      VAULTS_NAME=${2};     shift 2;;
         '-v' | '--vars')        VARS_NAME=${2};       shift 2;;
         '-w' | '--where-copy')  arg_where_copy=${2};  shift 2;;
         '--use-name')           use_name=${2};        shift 2;;
-        '--use-dir_cfg')        use_dir_cfg=${2};     shift 2;;
-        '-x' | '--export')      action="export";      shift;;
-        else)                   help; exit 0          ;;
+        '--use-dir-cfg')        use_dir_cfg=${2};     shift 2;;
+        '-x' | '--export')
+            set_action 'export'
+            shift;;
+        else)
+            item_msg_err "$ERR_BAD_ARG_COMMON"; echo " $i"
+            help;
+            exit 0
+            ;;
     esac
 done
-# новый разбор аргументов
-first_arg=$1
-
 
 ### --timeout, по-умолчанию = 60 сек
 TIMEOUT=${TIMEOUT:=60}
-### --action, по-умолчанию = add
+### Если action не передан, то по-умолчанию add
 action=${action:="add"}
+# TODO проверить action на валидность
+is_valid=0
+for value in "${actions[@]}"
+do
+  if [[ "$action" = "$value" ]]; then
+    is_valid=1
+    break
+  fi
+done
+if (( is_valid != 1)); then
+  break_script "$ERR_BAD_ARG_COMMON" " Неверно указано действие ${action}"
+fi
 
 ### --pass_file (-p) начальная инициализация cipher шифрования
 #init_cipher $pass_file
@@ -188,6 +241,8 @@ if { [[ -n "$arg_vault" ]] && [[ ! -f "$arg_vault" ]]; }; then
 fi
 # shellcheck source=functions/${arg_vault}
 if [[ -f ${arg_vault} ]]; then
+  # shellcheck disable=SC1091
+  # shellcheck disable=SC2086
   source ${arg_vault}
 else
   unset arg_vault
@@ -195,7 +250,7 @@ fi
 
 ### Теперь заменяем переменные, значениями переданными через командную строку (-e, --env)
 for t in "${array_env[@]}"; do
-  eval $t
+  eval "$t"
 done
 
 ### Инициализация имени образа. Аргумент --image (-i) заменяет имя образа из файлов переменных
@@ -204,7 +259,7 @@ done
 ### инитиализация имен файлов конфига, скриптов презапуска, запуска, послезапуска для контейнера
 ### файл конфигурации
 #$(last_char_dir ${dir_cfg})
-config_file="$(last_char_dir ${dir_cfg})${DEF_CFG_YAML}"
+config_file="$(last_char_dir "${dir_cfg}")${DEF_CFG_YAML}"
 ### если файла нет, то очистить переменную. Нет конфига
 [[ -f ${config_file} ]] || unset config_file
 ### если файл cfg есть, то инит confgi_file_render,
@@ -234,13 +289,17 @@ script_start="${dir_cfg}/${DEF_FIRST_SH}"
 [[ -f ${script_start} ]] || unset script_start
 
 ### местоположение куда копировать бэкапы
-[[ $use_dir_cfg -ne 0 ]] && pref="${dir_cfg}/" || pref=""
+if [[ $use_dir_cfg -ne 0 ]]; then
+  pref="${dir_cfg}/"
+else
+  pref=""
+fi
 where_copy=${where_copy:=${pref}${DEF_WHERE_COPY}}
 [[ -n $arg_where_copy ]] && where_copy=${arg_where_copy}
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # добавить имя контейнера к пути бэкапа
-[[ ${use_name} -ne 0 ]] && where_copy="${where_copy}/$(get_part_from_container_name ${CONTAINER_NAME} h)-$(get_part_from_container_name ${CONTAINER_NAME})"
+[[ ${use_name} -ne 0 ]] && where_copy="${where_copy}/$(get_part_from_container_name "${CONTAINER_NAME}" h)-$(get_part_from_container_name "${CONTAINER_NAME}")"
 # последний символ не д.б. '/'
 where_copy=$(last_char_dir "${where_copy}" del)
 # ошибка, если файл существует и не является каталогом
@@ -258,17 +317,17 @@ debug "DEBUG--------------- $DEBUG"
 debug "DEBUG_LEVEL--------- $DEBUG_LEVEL"
 debug "NOT_BACKUP_BEFORE_DELETE: $NOT_BACKUP_BEFORE_DELETE"
 debug "--------------------------------- calculated variables"
+debug "action:------------- $action"
 debug "dir_cfg:------------ $dir_cfg"
 debug "config_file:-------- $config_file"
 debug "confgi_file_render:- $config_file_render"
-
 debug "hooks_file:--------- $hooks_file"
 debug "hook_afterstart:---- $hook_afterstart"
 debug "hook_beforestart:--- $hook_beforestart"
 debug "script_start:------- $script_start"
-debug "action:------------- $action"
+debug "use_dir_cfg:-------- ${use_dir_cfg}"
+debug "use_name:----------- ${use_name}"
 debug "where_copy:--------- $where_copy"
-debug "use_name:----------- $use_name"
 debug "script_backup:------ ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
 debug "--------------------------------- VARS files for source"
 debug "global_vars:-------- ${global_vars}"
