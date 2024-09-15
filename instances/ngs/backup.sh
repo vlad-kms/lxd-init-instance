@@ -14,7 +14,7 @@
 
 name_tar="${1}"
 dt="$(date +"%Y%m%d-%H%M%S")-"
-unset dt
+#unset dt
 name_tar="${name_tar:=${dt}named.tar.gz}"
 name_tar="/root/$name_tar"
 #debug "$0 - name_tar: $name_tar"
