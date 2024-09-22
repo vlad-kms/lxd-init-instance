@@ -2,8 +2,8 @@ config:
   boot.autostart: $AUTO_START
   environment.EDITOR: mcedit
   environment.ENV: /etc/profile
-  boot.autostart.delay: 40
-  #security.nesting: true
+  boot.autostart.priority: $AUTOSTART_PRIORITY
+  boot.autostart.delay: 30
   
   cloud-init.user-data: |
     #cloud-config

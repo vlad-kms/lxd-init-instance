@@ -3,50 +3,36 @@ config:
   environment.ENV: /etc/profile
   boot.autostart.delay: 40
   security.nesting: true
+  volatile.eth0.hwaddr: "00:16:3e:e7:20:01"
+  boot.autostart.priority: $AUTOSTART_PRIORITY
   
   cloud-init.user-data: |
     #cloud-config
     timezone: Asia/Vladivostok
     package_upgrade: true
     packages:
+      - mc
       - openssh-server
       - curl
       - socat
       - net-tools
-      - dnsutils
       - tcpdump
-    #resolv_conf:
-    #  nameservers:
-    #    - 192.168.16.3
-    #  searchdomains:
-    #    - home.lan
-    #    - klinika.lan
-    #    - mrovo.lan
-    #  domain: home.lan
+      - dnsutils
+      - git
     write_files:
       - path: /root/.ssh/authorized_keys
         permissions: \"0600\"
         content: |
           ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAkwes1Wn8jrKFQI1+c43OAtq1ve6dxm+h7OctUx+v0SOn1QlybXPAB020+bHj/pVfUM9o9BVoaNUF199xosN3grpqJ33SOMU8d1nC8cG0tQP7jemjEqKzyO2Wc2mYkiimyaH3vCj+6/77M+AzFiO5QUNj20yUu9g8Fi1fSUcokhABMbIBhn8SMujZti05tdh6ILqWhUPFbdwn9LzdzREomtwzebORi48B3ROU/+D2I4zVcpRPQpHkVt89lvmgMzbozmfA1dq5KSIsg6nuwSU854nbxiDGCz+IvgQpUH2qWNdSji7sWPBGU19TD2g1BuH18ZCoK/Q4l/5xpVSynhW1XQ== rsa-key-20220217-home_lan
           ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH1nzbCN1MIxM9MrTpqrMf/co88+V7Xs8mluYOtpAHAI ed25519-home
+    runcmd:
+      - [git clone, https://github.com/asdf-vm/asdf.git, ~/.asdf, --branch, v0.14.1]
   cloud-init.network-config: |
     #cloud-config
     version: 2
     ethernets:
       eth0:
         dhcp4: true
-        #macaddress: "11:22:33:aa:bb:ff"
-        #addresses:
-        #  - $IPV4/$MASK
-        #gateway4: $GW
-        #nameservers:
-        #  addresses:
-        #    - 192.168.16.3
-        #  search:
-        #    - home.lan
-        #    - klinika.lan
-        #  domain: home.lan
-        #domain: home.lan
 profiles:
   - default
   - low_mem
