@@ -60,7 +60,7 @@ add_instance() {
     exit $ret
   fi
   after_init_container=${after_init_container:='after_init_container'}
-  debug "=== Ловушка перед инициализацией инстанса: $after_init_container"
+  debug "=== Ловушка после инициализации инстанса: $after_init_container"
   hook_dispath "${hooks_file}" "${after_init_container}"
   if [[ -z $CONTAINER_NAME ]]; then
     ### если имя контейнера пусто, то ошибка создания контейнера
