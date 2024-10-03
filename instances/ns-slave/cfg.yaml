@@ -1,6 +1,7 @@
 config:
   environment.EDITOR: mcedit
   environment.ENV: /etc/profile
+  boot.autostart.priority: $AUTOSTART_PRIORITY
   
   cloud-init.user-data: |
     #cloud-config

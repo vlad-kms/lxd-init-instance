@@ -10,3 +10,5 @@ find /usr/share/nagios -type f -exec chmod 0644 '{}' \;
 
 rc-service apache2 restart
 rc-service nagios restart
+
+rm -f ${0}
