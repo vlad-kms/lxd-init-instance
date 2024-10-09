@@ -5,6 +5,8 @@ config:
   security.nesting: true
   volatile.eth0.hwaddr: "00:16:3e:e7:20:01"
   boot.autostart.priority: $AUTOSTART_PRIORITY
+  limits.memory: "8192MB"
+  limits.cpu: "8"
   
   cloud-init.user-data: |
     #cloud-config
@@ -39,7 +41,7 @@ config:
         dhcp4: true
 profiles:
   - default
-  - low_mem
-  - low_cpu
+  #- low_mem
+  #- high_cpu
   - $NET_INSTANCE
   #- autostart

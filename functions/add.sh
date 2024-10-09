@@ -14,9 +14,9 @@ create_container() {
   fi
   if [[ -z $2 ]]; then
     # shellcheck disable=SC2154
-    "$lxc_cmd" init "$1" | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+    $lxc_cmd init "$1" | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   else
-    "$lxc_cmd" init "$1" < "$2" | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
+    $lxc_cmd init "$1" < "$2" | sed -ne 's/Instance name is:[[:blank:]]*\([[:graph:]]*\)$/\1/p'
   fi
 }
 
@@ -39,7 +39,7 @@ add_instance() {
     else
       ### Инициализация инстанса
       debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME} < ${config_file_render}"
-      ${lxc_cmd} init "${IMAGE_NAME}" "${CONTAINER_NAME}" < "${config_file_render}"
+      ${lxc_cmd} init "${IMAGE_NAME}" "${CONTAINER_NAME}" < "${config_file_render}" >&2
     fi
   else
     ### нет файла config.yaml для инстанса
@@ -51,7 +51,7 @@ add_instance() {
     else
       ### Инициализация инстанса
       debug "--- Инит инстанс ${CONTAINER_NAME}: ${lxc_cmd} init ${IMAGE_NAME} ${CONTAINER_NAME}"
-      ${lxc_cmd} init "${IMAGE_NAME}" "${CONTAINER_NAME}"
+      ${lxc_cmd} init "${IMAGE_NAME}" "${CONTAINER_NAME}" >&2
     fi
   fi
   ### Выход если ошибка инициализации инстанса
@@ -170,7 +170,8 @@ add_instance() {
     # shellcheck disable=SC2034
     ss=$(${lxc_cmd} exec "${CONTAINER_NAME}" -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait")
   else
-    ${lxc_cmd} exec "${CONTAINER_NAME}" -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
+    ${lxc_cmd} exec "${CONTAINER_NAME}" -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait" >&2
+    #lxc exec "${CONTAINER_NAME}" -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
   fi
   #${lxc_cmd} exec "${CONTAINER_NAME}"" -- sh -c "[ -x /usr/bin/cloud-init ] && cloud-init status --wait"
 
@@ -191,7 +192,7 @@ add_instance() {
   ### скрипт после запуска инстанса, выполняемый внутри контейнера
   if [[ -n ${script_start} ]]; then
     debug "=== Скрипт после запуска инстанс, выполняемый в контейнере: ${SCRIPT_NAME} ---> ${dst}"
-    ${lxc_cmd} exec "$CONTAINER_NAME" -- sh -c ". ${dst}"
+    ${lxc_cmd} exec "$CONTAINER_NAME" -- bash -c ". ${dst}"
   fi
 
   ### если требуется перезапуск, то выполнить его
