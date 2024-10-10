@@ -125,3 +125,6 @@ item_msg_err() {
   [[ -z $1 ]] && i=$ERR_UNDEFINED || i=$1
   eval echo -n "${msg_arr[${i}]}"
 }
+
+#TEST
+#echo "$(item_msg_err 99)"

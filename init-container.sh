@@ -386,7 +386,7 @@ case "$action" in
     }
     ;;
   'dec_file') {
-      echo "Action: dec_file"
+      debug "Action: dec_file"
       if [[ "${cipher_file_name}" == "${DEF_CIPHER_FILE_NAME}" ]]; then
         cipher_file_name="${cipher_file_name}-enc"
       fi
@@ -398,7 +398,7 @@ case "$action" in
     }
     ;;
   'enc_file') {
-      echo "Action: enc_file"
+      debug "Action: enc_file"
       arr_files=$(find "${cipher_file_dir}" -type f -name "${cipher_file_name}")
       for item in "${arr_files[@]}"; do
         encode_file "${item}" "${item}-enc";
@@ -407,7 +407,7 @@ case "$action" in
     }
     ;;
   else )    {
-      echo "Action: UNDEFINED"
+      debug "Action: UNDEFINED"
     }
     ;;
 esac
