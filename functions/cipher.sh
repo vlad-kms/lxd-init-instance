@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # shellcheck disable=SC1091
-source ./functions/global_vars.sh
+source ./functions/global_vars.sh || source ./global_vars.sh
 #source ./functions/common.sh
 
 # Используется шифрование и какой провайдер:
