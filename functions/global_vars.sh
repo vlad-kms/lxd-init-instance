@@ -15,7 +15,6 @@ ERR_BAD_ACTION_LASTCHAR_DIR=125;        # Неверное действия с �
 ERR_NOT_SCRIPT_BACKUP=200;              # В каталоге конфигурации нет скрипта для бэкапа ${dir_cfg}/${DEF_SCRIPT_BACKUP}
 ERR_NOT_DIR_WHERE_COPY=201;             # Указанное место для фалов бэкапа не является каталогом ${where_copy}
 
-ERR_DELETE_CONTAINER=140                # Ошибка при удалениии контейнера
 
 declare -A msg_arr
 msg_arr[${ERR_UNDEFINED}]='Неизвестная ошибка'
@@ -35,6 +34,7 @@ msg_arr[${ERR_NOT_SCRIPT_BACKUP}]="В каталоге конфигурации 
 msg_arr[${ERR_NOT_DIR_WHERE_COPY}]="Место куда складывать бэкапы не является каталогом \"${where_copy}\""
 # shellcheck disable=SC2154
 msg_arr[${ERR_BAD_ACTION_LASTCHAR_DIR}]="Неверное действие \"${act}\" с последним символом в имени каталога"
+
 msg_arr[${ERR_DELETE_CONTAINER=140}]="Ошибка при удалениии контейнера \"${CONTAINER_NAME}\""
 msg_arr[${ERR_BAD_ARG_COMMON=106}]="Неверные аргументы."
 
@@ -128,3 +128,5 @@ item_msg_err() {
 
 #TEST
 #echo "$(item_msg_err 99)"
+#echo "$ERR_BAD_ARG_COMMON"
+#echo "$ERR_DELETE_CONTAINER"

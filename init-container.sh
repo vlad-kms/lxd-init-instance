@@ -412,7 +412,7 @@ case "$action" in
     ;;
 esac
 
-echo -e "\nContainer alias: ${CONTAINER_NAME}"
+echo -e "Container alias: ${CONTAINER_NAME}"
 echo "${CONTAINER_NAME}"
 
 #[[ "$DEBUG" -eq "0" ]] && clear_working
