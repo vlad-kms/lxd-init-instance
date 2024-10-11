@@ -56,8 +56,8 @@ if [[ $DEBUG -ne 0 ]]; then
   asdf install maven "${ver_mvn}" >&2
   asdf global  maven "${ver_mvn}" >&2
 else
-  asdf install maven "${ver_mvn}" >&2 2>/dev/null
-  asdf global  maven "${ver_mvn}" >&2 2>/dev/null
+  asdf install maven "${ver_mvn}" >&2 2>/dev/null >/dev/null
+  asdf global  maven "${ver_mvn}" >&2 2>/dev/null >/dev/null
 fi
 
 # добавить java
@@ -72,6 +72,6 @@ if [[ $DEBUG -ne 0 ]]; then
   asdf install java "${ver_jdk}" >&2
   asdf global  java "${ver_jdk}" >&2
 else
-  asdf install java "${ver_jdk}" >&2 2>/dev/null
-  asdf global  java "${ver_jdk}" >&2 2>/dev/null
+  asdf install java "${ver_jdk}" >&2 2>/dev/null >/dev/null
+  asdf global  java "${ver_jdk}" >&2 2>/dev/null >/dev/null
 fi
