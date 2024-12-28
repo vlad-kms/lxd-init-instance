@@ -1,0 +1,9 @@
+set_var EASYRSA_REQ_COUNTRY    "RUS"
+set_var EASYRSA_REQ_PROVINCE   "Khabarovsky region"
+set_var EASYRSA_REQ_CITY   "Khabarovsk"
+set_var EASYRSA_REQ_ORG    "Home"
+set_var EASYRSA_REQ_EMAIL  "9141778236@mail.ru"
+set_var EASYRSA_REQ_OU     "IT"
+
+set_var EASYRSA_ALGO       ec
+set_var EASYRSA_DIGEST     "sha512"
