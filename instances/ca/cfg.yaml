@@ -1,0 +1,48 @@
+config:
+  environment.EDITOR: mcedit
+  environment.ENV: /etc/profile
+  boot.autostart.priority: $AUTOSTART_PRIORITY
+  
+  cloud-init.user-data: |
+    #cloud-config
+    timezone: Asia/Vladivostok
+    packages_update: true
+    packages:
+      - bash
+      - openssh
+      - easy-rsa
+      - mc
+    manage_resolv_conf: true
+    resolv_conf:
+      nameservers:
+        - 192.168.15.3
+      searchdomains:
+        - home.lan
+        - klinika.lan
+      domain: home.lan
+    write_files:
+      - path: /etc/sysctl.conf
+        permissions: \"0644\"
+        content: |
+          net.ipv6.conf.all.disable_ipv6=1
+          net.ipv6.conf.default.disable_ipv6=1
+    runcmd:
+      - [rc-update, add, sysctl, default]
+      - [rc-service, sysctl, start]
+      - [rc-update, add, sshd, default]
+      - [chsh, --shell, /bin/bash, root]
+      #- [chmod, 700, /root/easy-rsa]
+      #- [ln, -s, /usr/share/easy-rsa/*, /root/easy-rsa/]
+  cloud-init.network-config: |
+    #cloud-config
+    version: 2
+    ethernets:
+      eth0:
+        addresses:
+          - $IPV4/$MASK
+        gateway4: $GW
+profiles:
+  - default
+  - low_mem
+  - low_cpu
+  - $NET_INSTANCE

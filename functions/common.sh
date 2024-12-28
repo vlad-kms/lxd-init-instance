@@ -67,7 +67,7 @@ debug() {
   level=$2
   level=${level:=$DEBUG_LEVEL}
   if [[ $DEBUG -ne 0 ]]; then
-    echo "deb::: $1"
+    echo "deb::: $1" >&2
   fi
 }
 
@@ -145,10 +145,12 @@ is_running_instance() {
 restart_instance() {
   debug "=== restarting instance"
   state_instance=$(state_instance "$1")
-  [[ "${state_instance}" != "NOT_EXISTS" ]] && {
-     [[ "${state_instance}" = "RUNNING" ]] &&  "${lxc_cmd}" stop "$1"
-    "${lxc_cmd}" start "$1"
-  }
+  if [[ "${state_instance}" != "NOT_EXISTS" ]]; then
+    if [[ "${state_instance}" = "RUNNING" ]]; then
+      ${lxc_cmd} stop "$1"
+    fi
+    ${lxc_cmd} start "$1"
+  fi
 }
 
 ########################################

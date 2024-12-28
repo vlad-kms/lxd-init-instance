@@ -336,6 +336,7 @@ debug "use_dir_cfg:-------- ${use_dir_cfg}"
 debug "use_name:----------- ${use_name}"
 debug "where_copy:--------- $where_copy"
 debug "script_backup:------ ${dir_cfg}/${DEF_SCRIPT_BACKUP}"
+debug "pass_file:---------- ${pass_file}"
 debug "--------------------------------- VARS files for source"
 debug "global_vars:-------- ${global_vars}"
 debug "project_vars:------- ${project_vars}"
@@ -386,7 +387,7 @@ case "$action" in
     }
     ;;
   'dec_file') {
-      echo "Action: dec_file"
+      debug "Action: dec_file"
       if [[ "${cipher_file_name}" == "${DEF_CIPHER_FILE_NAME}" ]]; then
         cipher_file_name="${cipher_file_name}-enc"
       fi
@@ -398,7 +399,7 @@ case "$action" in
     }
     ;;
   'enc_file') {
-      echo "Action: enc_file"
+      debug "Action: enc_file"
       arr_files=$(find "${cipher_file_dir}" -type f -name "${cipher_file_name}")
       for item in "${arr_files[@]}"; do
         encode_file "${item}" "${item}-enc";
@@ -407,14 +408,12 @@ case "$action" in
     }
     ;;
   else )    {
-      echo "Action: UNDEFINED"
+      debug "Action: UNDEFINED"
     }
     ;;
 esac
 
-echo -e "\nContainer alias: ${CONTAINER_NAME}"
+echo -e "Container alias: ${CONTAINER_NAME}"
 echo "${CONTAINER_NAME}"
 
 #[[ "$DEBUG" -eq "0" ]] && clear_working
-
-
